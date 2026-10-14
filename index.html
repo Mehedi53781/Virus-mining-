@@ -44,7 +44,20 @@ function earned(){return d.running?Math.min(Date.now()-d.startAt,DURATION)/36000
 function time(ms){let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':')}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
 function render(){if(d.running&&Date.now()-d.startAt>=DURATION){d.balance+=DURATION/3600000*RATE;d.running=false;d.startAt=0;save()}$('balance').textContent=(d.balance+earned()).toFixed(6);$('status').textContent=d.running?'Active':'Inactive';$('timer').textContent=time(d.running?DURATION-(Date.now()-d.startAt):DURATION);$('start').innerHTML=d.running?'⏸ &nbsp; Stop Mining':'⛏️ &nbsp; Start Mining'}
-$('start').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0}else{d.running=true;d.startAt=Date.now()}save();render()};
+
+$('start').addEventListener('click', function () {
+    if (!d.running) {
+        d.running = true;
+        d.startAt = Date.now();
+    } else {
+        d.balance += earned();
+        d.running = false;
+        d.startAt = 0;
+    }
+    save();
+    render();
+});
+
 $('tap').onclick=()=>{d.balance+=1;d.taps++;save();render()};
 $('claim').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0;save();render()}alert('Points claimed on this device only. No real token or withdrawal is available.')};
 render();setInterval(render,1000);
