@@ -14,11 +14,11 @@ main{max-width:480px;margin:auto;padding:20px 16px 30px}.top{display:flex;align-
 .price{font-size:32px;font-weight:800;margin-bottom:8px}.change{color:var(--green);font-size:16px}.change span{color:var(--muted);margin-left:8px}
 .chart{height:150px;margin:18px 0 8px;position:relative;border-bottom:1px solid #293541;overflow:hidden}
 .chart svg{width:100%;height:100%}.ranges{display:flex;justify-content:space-between;padding:8px 6px 18px;color:#d7dde4;font-weight:bold}
-.card{background:var(--panel);border-radius:22px;padding:18px;margin:14px 0}.receive{width:100%;border:0;background:var(--panel2);color:white;border-radius:20px;padding:18px;font-size:16px;font-weight:bold}
+.card{background:var(--panel);border-radius:22px;padding:18px;margin:14px 0}.receive{width:100%;border:0;background:var(--panel2);color:white;border-radius:20px;padding:18px;font-size:16px;font-weight:bold;cursor:pointer}
 h2{font-size:19px;margin:26px 0 14px}.about{background:var(--panel);border-radius:20px;padding:18px;line-height:1.5;color:#f0f3f7}
 .row{display:flex;justify-content:space-between;gap:10px;padding:16px 2px;border-bottom:1px solid #2a3745}.row:last-child{border:0}.row span{color:var(--muted)}.row strong{font-size:16px}
-.mine{display:flex;align-items:center;flex-direction:column;padding:12px 0 4px}.mine button{width:126px;height:126px;border-radius:50%;border:3px solid #63b8ff;background:radial-gradient(circle at 35% 25%,#438fe5,#1454a3);color:white;font-size:17px;font-weight:800;box-shadow:0 0 25px #398ff033}
-.muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px}
+.mine{display:flex;align-items:center;flex-direction:column;padding:12px 0 4px}.mine button{width:126px;height:126px;border-radius:50%;border:3px solid #63b8ff;background:radial-gradient(circle at 35% 25%,#438fe5,#1454a3);color:white;font-size:17px;font-weight:800;box-shadow:0 0 25px #398ff033;cursor:pointer}
+.muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px;cursor:pointer}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#172330;padding:14px;border-radius:14px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:7px;color:#fff;font-size:18px}
 footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20px 0}
 </style></head>
@@ -59,6 +59,20 @@ $('start').addEventListener('click', function () {
 });
 
 $('tap').onclick=()=>{d.balance+=1;d.taps++;save();render()};
-$('claim').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0;save();render()}alert('Points claimed on this device only. No real token or withdrawal is available.')};
+
+$('claim').onclick=()=>{
+    if(d.running){
+        let gained = earned();
+        d.balance += gained;
+        d.running = false;
+        d.startAt = 0;
+        save();
+        render();
+        alert('Points Claimed Successfully! Total: ' + gained.toFixed(6) + ' VIRUS');
+    } else {
+        alert('Mining session is currently inactive. Start mining to earn points.');
+    }
+};
+
 render();setInterval(render,1000);
 </script></body></html>
