@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Epidemy Mine — Demo</title>
+<title>Epidemy Mine</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#101720;--panel:#1d2936;--panel2:#202d3b;--text:#f5f7fa;--muted:#96a3b2;--green:#42c990;--blue:#398ff0}
@@ -26,19 +26,19 @@ footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20p
 <div class="top"><div class="circle">‹</div><div class="brand"><h1>Epidemy Mine</h1><small>TON · Mining</small></div><div class="circle">⋯</div></div>
 <div class="coin">✳</div>
 <div class="price"><span id="balance">0.000000</span> EPM</div>
-<div class="change">● Mining demo <span id="status">Inactive</span></div>
+<div class="change">● Mining status <span id="status">Inactive</span></div>
 <div class="chart"><svg viewBox="0 0 400 150" preserveAspectRatio="none" aria-label="Decorative sample chart"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#42c990" stop-opacity=".25"/><stop offset="1" stop-color="#42c990" stop-opacity="0"/></linearGradient></defs><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43 L400 150 L0 150Z" fill="url(#area)"/><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43" fill="none" stroke="#42c990" stroke-width="2.5"/></svg></div>
 <div class="ranges"><span>H</span><span>D</span><span>W</span><span>M</span><span>6M</span><span>Y</span></div>
 <button class="receive" id="start">⛏️ &nbsp; Start Mining</button>
 <h2>Mining Center</h2>
-<div class="card"><div class="mine"><button id="tap">TAP<br>+1 EPM</button><div class="muted">Tap to collect demo points</div></div><div class="stats"><div class="stat"><span>Mining rate</span><strong>0.5 EPM/hr</strong></div><div class="stat"><span>Session timer</span><strong id="timer">08:00:00</strong></div></div><button class="primary" id="claim">Claim Demo Points</button></div>
-<h2>About</h2><div class="about">Epidemy Mine is a community mining app prototype. Start a session, collect demo points, and explore the mining interface.</div>
-<h2>Overview</h2><div class="card"><div class="row"><span>Demo Market Cap</span><strong>Not launched</strong></div><div class="row"><span>Total Supply</span><strong>Not announced</strong></div><div class="row"><span>TON token</span><strong>Future plan</strong></div></div>
-<footer>Unofficial concept prototype. Not affiliated with the Epidemy project shown in your reference image. EPM points are demo-only, have no cash value, and are not a TON token.</footer>
+<div class="card"><div class="mine"><button id="tap">TAP<br>+1 EPM</button><div class="muted">Tap to collect points</div></div><div class="stats"><div class="stat"><span>Mining rate</span><strong>0.5 EPM/hr</strong></div><div class="stat"><span>Session timer</span><strong id="timer">08:00:00</strong></div></div><button class="primary" id="claim">Claim Points</button></div>
+<h2>About</h2><div class="about">Epidemy Mine is a community mining app. Start a session and collect points.</div>
+<h2>Overview</h2><div class="card"><div class="row"><span>Market Cap</span><strong>Not launched</strong></div><div class="row"><span>Total Supply</span><strong>Not announced</strong></div><div class="row"><span>TON token</span><strong>Future plan</strong></div></div>
+<footer>Unofficial concept prototype. Not affiliated with the Epidemy project shown in your reference image. EPM points are stored locally, have no cash value, and are not a TON token.</footer>
 </main>
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand()}
-const $=id=>document.getElementById(id),KEY='epidemymine_demo_v1',DURATION=8*3600000,RATE=.5;
+const $=id=>document.getElementById(id),KEY='epidemymine_v1',DURATION=8*3600000,RATE=.5;
 let d={balance:0,running:false,startAt:0,taps:0};try{d={...d,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){}
 function earned(){return d.running?Math.min(Date.now()-d.startAt,DURATION)/3600000*RATE:0}
 function time(ms){let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':')}
@@ -46,6 +46,6 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
 function render(){if(d.running&&Date.now()-d.startAt>=DURATION){d.balance+=DURATION/3600000*RATE;d.running=false;d.startAt=0;save()}$('balance').textContent=(d.balance+earned()).toFixed(6);$('status').textContent=d.running?'Active':'Inactive';$('timer').textContent=time(d.running?DURATION-(Date.now()-d.startAt):DURATION);$('start').innerHTML=d.running?'⏸ &nbsp; Stop Mining':'⛏️ &nbsp; Start Mining'}
 $('start').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0}else{d.running=true;d.startAt=Date.now()}save();render()};
 $('tap').onclick=()=>{d.balance+=1;d.taps++;save();render()};
-$('claim').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0;save();render()}alert('Demo points claimed locally only. No real token or withdrawal is available.')};
+$('claim').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0;save();render()}alert('Points claimed on this device only. No real token or withdrawal is available.')};
 render();setInterval(render,1000);
 </script></body></html>
