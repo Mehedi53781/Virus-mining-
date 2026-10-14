@@ -23,7 +23,6 @@ h2{font-size:19px;margin:26px 0 14px}.about{background:var(--panel);border-radiu
 .muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px;cursor:pointer}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#172330;padding:14px;border-radius:14px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:7px;color:#fff;font-size:18px}
 
-/* Task & Ref Styles */
 .task-item{display:flex;justify-content:space-between;align-items:center;background:#172330;padding:12px 14px;border-radius:14px;margin-bottom:10px}
 .task-item button{background:var(--green);border:0;color:#fff;padding:8px 14px;border-radius:10px;font-weight:bold;cursor:pointer}
 .task-item button:disabled{background:#555;cursor:not-allowed;font-size:11px}
@@ -99,7 +98,7 @@ footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20p
 
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand()}
-const $=id=>document.getElementById(id),KEY='virusmine_v5',DURATION=6*3600000,DAY_MS=24*3600000;
+const $=id=>document.getElementById(id),KEY='virusmine_v_final',DURATION=6*3600000,DAY_MS=24*3600000;
 
 let d={
     balance: 0,
@@ -113,9 +112,13 @@ let d={
     claimed7DaysRefs: 0
 };
 
-try{d={...d,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){}
+try{
+    let saved = localStorage.getItem(KEY);
+    if(saved) {
+        d={...d,...JSON.parse(saved)};
+    }
+}catch(e){}
 
-// Compute Dynamic Mining Rate based on Referral Count
 function getMiningRate() {
     let r = d.refCount || 0;
     if (r >= 50000) return 100;
@@ -129,7 +132,7 @@ function getMiningRate() {
     if (r >= 50) return 25;
     if (r >= 25) return 20;
     if (r >= 10) return 15;
-    return 10; // Default rate
+    return 10;
 }
 
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -177,7 +180,6 @@ function render(){
     $('mining-rate-text').textContent = currentRate + ' VIRUS/hr';
     $('ref-count').textContent = d.refCount || 0;
     
-    // Check Task 1 Timer (Channel)
     let t1_diff = Date.now() - (d.tasks.t1_last || 0);
     if(t1_diff < DAY_MS){
         $('task1').disabled = true;
@@ -187,7 +189,6 @@ function render(){
         $('task1').textContent = 'Join';
     }
 
-    // Check Task 2 Timer (Group)
     let t2_diff = Date.now() - (d.tasks.t2_last || 0);
     if(t2_diff < DAY_MS){
         $('task2').disabled = true;
@@ -236,7 +237,6 @@ $('claim').onclick=()=>{
     }
 };
 
-// Daily Task 1: Telegram Channel (+10 VIRUS)
 $('task1').onclick=()=>{
     window.open('https://t.me/virusmining', '_blank');
     d.tasks.t1_last = Date.now();
@@ -246,7 +246,6 @@ $('task1').onclick=()=>{
     alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
 };
 
-// Daily Task 2: Telegram Group/Bot (+10 VIRUS)
 $('task2').onclick=()=>{
     window.open('https://t.me/virusminingbot', '_blank');
     d.tasks.t2_last = Date.now();
@@ -256,7 +255,6 @@ $('task2').onclick=()=>{
     alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
 };
 
-// Check & Claim 7-Day Active Referral Bonus (+100 Tokens)
 $('claim-ref-bonus').onclick=()=>{
     let unclaimed = (d.active7DaysRefs || 0) - (d.claimed7DaysRefs || 0);
     if(unclaimed > 0){
