@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Epidemy Mine — Demo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#101720;--panel:#1d2936;--panel2:#202d3b;--text:#f5f7fa;--muted:#96a3b2;--green:#42c990;--blue:#398ff0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+main{max-width:480px;margin:auto;padding:20px 16px 30px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.circle{width:42px;height:42px;border-radius:50%;background:#202a36;display:grid;place-items:center;color:#fff;font-size:22px}
+.brand{text-align:center}.brand h1{font-size:23px;margin:0}.brand small{color:var(--muted);font-size:15px}
+.coin{width:76px;height:76px;border-radius:50%;background:linear-gradient(145deg,#50a7ff,#176bd0);display:grid;place-items:center;font-size:36px;margin:0 0 18px;border:3px solid #7bc0ff}
+.price{font-size:32px;font-weight:800;margin-bottom:8px}.change{color:var(--green);font-size:16px}.change span{color:var(--muted);margin-left:8px}
+.chart{height:150px;margin:18px 0 8px;position:relative;border-bottom:1px solid #293541;overflow:hidden}
+.chart svg{width:100%;height:100%}.ranges{display:flex;justify-content:space-between;padding:8px 6px 18px;color:#d7dde4;font-weight:bold}
+.card{background:var(--panel);border-radius:22px;padding:18px;margin:14px 0}.receive{width:100%;border:0;background:var(--panel2);color:white;border-radius:20px;padding:18px;font-size:16px;font-weight:bold}
+h2{font-size:19px;margin:26px 0 14px}.about{background:var(--panel);border-radius:20px;padding:18px;line-height:1.5;color:#f0f3f7}
+.row{display:flex;justify-content:space-between;gap:10px;padding:16px 2px;border-bottom:1px solid #2a3745}.row:last-child{border:0}.row span{color:var(--muted)}.row strong{font-size:16px}
+.mine{display:flex;align-items:center;flex-direction:column;padding:12px 0 4px}.mine button{width:126px;height:126px;border-radius:50%;border:3px solid #63b8ff;background:radial-gradient(circle at 35% 25%,#438fe5,#1454a3);color:white;font-size:17px;font-weight:800;box-shadow:0 0 25px #398ff033}
+.muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#172330;padding:14px;border-radius:14px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:7px;color:#fff;font-size:18px}
+footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20px 0}
+</style></head>
+<body><main>
+<div class="top"><div class="circle">‹</div><div class="brand"><h1>Epidemy Mine</h1><small>TON · Mining</small></div><div class="circle">⋯</div></div>
+<div class="coin">✳</div>
+<div class="price"><span id="balance">0.000000</span> EPM</div>
+<div class="change">● Mining demo <span id="status">Inactive</span></div>
+<div class="chart"><svg viewBox="0 0 400 150" preserveAspectRatio="none" aria-label="Decorative sample chart"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#42c990" stop-opacity=".25"/><stop offset="1" stop-color="#42c990" stop-opacity="0"/></linearGradient></defs><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43 L400 150 L0 150Z" fill="url(#area)"/><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43" fill="none" stroke="#42c990" stroke-width="2.5"/></svg></div>
+<div class="ranges"><span>H</span><span>D</span><span>W</span><span>M</span><span>6M</span><span>Y</span></div>
+<button class="receive" id="start">⛏️ &nbsp; Start Mining</button>
+<h2>Mining Center</h2>
+<div class="card"><div class="mine"><button id="tap">TAP<br>+1 EPM</button><div class="muted">Tap to collect demo points</div></div><div class="stats"><div class="stat"><span>Mining rate</span><strong>0.5 EPM/hr</strong></div><div class="stat"><span>Session timer</span><strong id="timer">08:00:00</strong></div></div><button class="primary" id="claim">Claim Demo Points</button></div>
+<h2>About</h2><div class="about">Epidemy Mine is a community mining app prototype. Start a session, collect demo points, and explore the mining interface.</div>
+<h2>Overview</h2><div class="card"><div class="row"><span>Demo Market Cap</span><strong>Not launched</strong></div><div class="row"><span>Total Supply</span><strong>Not announced</strong></div><div class="row"><span>TON token</span><strong>Future plan</strong></div></div>
+<footer>Unofficial concept prototype. Not affiliated with the Epidemy project shown in your reference image. EPM points are demo-only, have no cash value, and are not a TON token.</footer>
+</main>
+<script>
+const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand()}
+const $=id=>document.getElementById(id),KEY='epidemymine_demo_v1',DURATION=8*3600000,RATE=.5;
+let d={balance:0,running:false,startAt:0,taps:0};try{d={...d,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){}
+function earned(){return d.running?Math.min(Date.now()-d.startAt,DURATION)/3600000*RATE:0}
+function time(ms){let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':')}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+function render(){if(d.running&&Date.now()-d.startAt>=DURATION){d.balance+=DURATION/3600000*RATE;d.running=false;d.startAt=0;save()}$('balance').textContent=(d.balance+earned()).toFixed(6);$('status').textContent=d.running?'Active':'Inactive';$('timer').textContent=time(d.running?DURATION-(Date.now()-d.startAt):DURATION);$('start').innerHTML=d.running?'⏸ &nbsp; Stop Mining':'⛏️ &nbsp; Start Mining'}
+$('start').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0}else{d.running=true;d.startAt=Date.now()}save();render()};
+$('tap').onclick=()=>{d.balance+=1;d.taps++;save();render()};
+$('claim').onclick=()=>{if(d.running){d.balance+=earned();d.running=false;d.startAt=0;save();render()}alert('Demo points claimed locally only. No real token or withdrawal is available.')};
+render();setInterval(render,1000);
+</script></body></html>
