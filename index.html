@@ -4,6 +4,8 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>VIRUS Mining</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
 <style>
 :root{--bg:#101720;--panel:#1d2936;--panel2:#202d3b;--text:#f5f7fa;--muted:#96a3b2;--green:#42c990;--blue:#398ff0}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
@@ -20,8 +22,16 @@ h2{font-size:19px;margin:26px 0 14px}.about{background:var(--panel);border-radiu
 .mine{display:flex;align-items:center;flex-direction:column;padding:12px 0 4px}.mine button{width:126px;height:126px;border-radius:50%;border:3px solid #63b8ff;background:radial-gradient(circle at 35% 25%,#438fe5,#1454a3);color:white;font-size:17px;font-weight:800;box-shadow:0 0 25px #398ff033;cursor:pointer}
 .muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px;cursor:pointer}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#172330;padding:14px;border-radius:14px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:7px;color:#fff;font-size:18px}
+
+/* Task & Ref Styles */
 .task-item{display:flex;justify-content:space-between;align-items:center;background:#172330;padding:12px 14px;border-radius:14px;margin-bottom:10px}
 .task-item button{background:var(--green);border:0;color:#fff;padding:8px 14px;border-radius:10px;font-weight:bold;cursor:pointer}
+.task-item button:disabled{background:#555;cursor:not-allowed;font-size:11px}
+.ref-box{display:flex;gap:8px;margin-top:8px}
+.ref-input{flex:1;background:#172330;border:1px solid #2a3745;color:var(--text);padding:10px;border-radius:10px;font-size:13px}
+.ref-btn{background:var(--blue);border:0;color:#fff;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer}
+
+#ton-connect-btn{display:flex;justify-content:center;margin-top:10px}
 footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20px 0}
 </style></head>
 <body><main>
@@ -36,20 +46,46 @@ footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20p
 <h2>Mining Center</h2>
 <div class="card">
   <div class="mine"><button id="tap">TAP<br>+1 VIRUS</button><div class="muted">Tap to collect points</div></div>
-  <div class="stats"><div class="stat"><span>Mining rate</span><strong>0.5 VIRUS/hr</strong></div><div class="stat"><span>Session timer</span><strong id="timer">08:00:00</strong></div></div>
+  <div class="stats">
+    <div class="stat"><span>Mining rate</span><strong id="mining-rate-text">10 VIRUS/hr</strong></div>
+    <div class="stat"><span>Session timer</span><strong id="timer">06:00:00</strong></div>
+  </div>
   <button class="primary" id="claim">Claim Points</button>
 </div>
 
-<h2>Tasks & Rewards</h2>
+<h2>Daily Tasks (+10 VIRUS)</h2>
 <div class="card">
-  <div class="task-item"><div><strong>Join Telegram Channel</strong><br><small style="color:var(--muted)">+5 VIRUS</small></div><button id="task1">Start</button></div>
-  <div class="task-item"><div><strong>Invite a Friend</strong><br><small style="color:var(--muted)">+10 VIRUS</small></div><button id="task2">Invite</button></div>
+  <div class="task-item">
+    <div><strong>Join Telegram Channel</strong><br><small style="color:var(--muted)">+10 VIRUS (Daily)</small></div>
+    <button id="task1">Join</button>
+  </div>
+  
+  <div class="task-item">
+    <div><strong>Join Community Group</strong><br><small style="color:var(--muted)">+10 VIRUS (Daily)</small></div>
+    <button id="task2">Join</button>
+  </div>
+</div>
+
+<h2>Referral System</h2>
+<div class="card">
+  <div class="row"><span>Total Referrals</span><strong id="ref-count">0</strong></div>
+  <div style="margin-top:10px;">
+    <strong>Your Referral Link (+50 VIRUS/ref)</strong>
+    <div class="ref-box">
+      <input type="text" id="ref-link-input" class="ref-input" readonly value="Loading...">
+      <button class="ref-btn" id="copy-ref">Copy</button>
+    </div>
+  </div>
+  <div style="margin-top:14px; font-size:12px; color:var(--muted); line-height:1.4;">
+    💡 <i>+50 tokens per invite. Get <b>+100 bonus tokens</b> when your referral stays active for 7 days, connects wallet, and joins channel/group!</i>
+  </div>
+  <button class="primary" id="claim-ref-bonus" style="background:var(--panel2); border:1px solid var(--blue); margin-top:12px;">Check 7-Day Active Referral Bonus (+100)</button>
 </div>
 
 <h2>Wallet Connect</h2>
 <div class="card">
-  <div class="row"><span>TON Wallet</span><strong id="wallet-status" style="color:var(--muted)">Not Connected</strong></div>
-  <button class="primary" id="connect-wallet" style="background:#202d3b;border:1px solid #398ff0">Connect TON Wallet</button>
+  <div class="row"><span>Connect TON Wallet</span><strong id="wallet-status" style="color:var(--muted)">Not Connected</strong></div>
+  <div id="ton-connect-btn"></div>
 </div>
 
 <h2>Overview</h2>
@@ -60,31 +96,116 @@ footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20p
 </div>
 <footer>Unofficial concept prototype. VIRUS points are stored locally, have no cash value, and are not a TON token.</footer>
 </main>
+
 <script>
 const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand()}
-const $=id=>document.getElementById(id),KEY='virusmine_v2',DURATION=8*3600000,RATE=.5;
-let d={balance:0,running:false,startAt:0,taps:0,wallet:null,tasks:{t1:false,t2:false}};
+const $=id=>document.getElementById(id),KEY='virusmine_v5',DURATION=6*3600000,DAY_MS=24*3600000;
+
+let d={
+    balance: 0,
+    running: false,
+    startAt: 0,
+    taps: 0,
+    refCount: 0,
+    wallet: null,
+    tasks: {t1_last:0, t2_last:0},
+    active7DaysRefs: 0,
+    claimed7DaysRefs: 0
+};
+
 try{d={...d,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){}
 
-function earned(){return d.running?Math.min(Date.now()-d.startAt,DURATION)/3600000*RATE:0}
-function time(ms){let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':')}
+// Compute Dynamic Mining Rate based on Referral Count
+function getMiningRate() {
+    let r = d.refCount || 0;
+    if (r >= 50000) return 100;
+    if (r >= 10000) return 85;
+    if (r >= 5000) return 75;
+    if (r >= 2500) return 65;
+    if (r >= 1000) return 50;
+    if (r >= 500) return 40;
+    if (r >= 250) return 35;
+    if (r >= 100) return 30;
+    if (r >= 50) return 25;
+    if (r >= 25) return 20;
+    if (r >= 10) return 15;
+    return 10; // Default rate
+}
+
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://mehedi53781.github.io/Virus-mining-/tonconnect-manifest.json',
+    buttonRootId: 'ton-connect-btn'
+});
+
+tonConnectUI.onStatusChange(wallet => {
+    if (wallet) {
+        d.wallet = wallet.account.address;
+        $('wallet-status').textContent = d.wallet.slice(0, 4) + '...' + d.wallet.slice(-4);
+        $('wallet-status').style.color = 'var(--green)';
+    } else {
+        d.wallet = null;
+        $('wallet-status').textContent = 'Not Connected';
+        $('wallet-status').style.color = 'var(--muted)';
+    }
+    save();
+});
+
+function earned(){
+    let rate = getMiningRate();
+    return d.running ? Math.min(Date.now() - d.startAt, DURATION) / 3600000 * rate : 0;
+}
+
+function time(ms){
+    let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;
+    return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
 function save(){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
 
 function render(){
-    if(d.running&&Date.now()-d.startAt>=DURATION){d.balance+=DURATION/3600000*RATE;d.running=false;d.startAt=0;save()}
-    $('balance').textContent=(d.balance+earned()).toFixed(6);
-    $('status').textContent=d.running?'Active':'Inactive';
-    $('timer').textContent=time(d.running?DURATION-(Date.now()-d.startAt):DURATION);
-    $('start').innerHTML=d.running?'⏸ &nbsp; Stop Mining':'⛏️ &nbsp; Start Mining';
-    
-    if(d.wallet){
-        $('wallet-status').textContent = d.wallet.slice(0,6)+'...'+d.wallet.slice(-4);
-        $('wallet-status').style.color = 'var(--green)';
-        $('connect-wallet').textContent = 'Connected';
+    let currentRate = getMiningRate();
+    if(d.running && Date.now()-d.startAt >= DURATION){
+        d.balance += DURATION/3600000 * currentRate;
+        d.running = false;
+        d.startAt = 0;
+        save();
     }
-    if(d.tasks.t1){$('task1').textContent='Done';$('task1').style.background='#555';}
-    if(d.tasks.t2){$('task2').textContent='Done';$('task2').style.background='#555';}
+    $('balance').textContent = (d.balance + earned()).toFixed(6);
+    $('status').textContent = d.running ? 'Active' : 'Inactive';
+    $('timer').textContent = time(d.running ? DURATION - (Date.now() - d.startAt) : DURATION);
+    $('start').innerHTML = d.running ? '⏸ &nbsp; Stop Mining' : '⛏️ &nbsp; Start Mining';
+    $('mining-rate-text').textContent = currentRate + ' VIRUS/hr';
+    $('ref-count').textContent = d.refCount || 0;
+    
+    // Check Task 1 Timer (Channel)
+    let t1_diff = Date.now() - (d.tasks.t1_last || 0);
+    if(t1_diff < DAY_MS){
+        $('task1').disabled = true;
+        $('task1').textContent = time(DAY_MS - t1_diff);
+    } else {
+        $('task1').disabled = false;
+        $('task1').textContent = 'Join';
+    }
+
+    // Check Task 2 Timer (Group)
+    let t2_diff = Date.now() - (d.tasks.t2_last || 0);
+    if(t2_diff < DAY_MS){
+        $('task2').disabled = true;
+        $('task2').textContent = time(DAY_MS - t2_diff);
+    } else {
+        $('task2').disabled = false;
+        $('task2').textContent = 'Join';
+    }
 }
+
+let userId = tg?.initDataUnsafe?.user?.id || '123456';
+let myRefLink = "https://t.me/epidemyvirusbot/virusmining?start=ref_" + userId;
+$('ref-link-input').value = myRefLink;
+
+$('copy-ref').onclick = () => {
+    navigator.clipboard.writeText(myRefLink);
+    alert('Referral link copied! Share with friends to get +50 VIRUS per invite.');
+};
 
 $('start').addEventListener('click', function () {
     if (!d.running) {
@@ -115,46 +236,38 @@ $('claim').onclick=()=>{
     }
 };
 
-// Task 1: Telegram Channel Join
+// Daily Task 1: Telegram Channel (+10 VIRUS)
 $('task1').onclick=()=>{
-    if(!d.tasks.t1){
-        d.tasks.t1=true;
-        d.balance+=5;
-        save();
-        render();
-        alert('Task Completed! You earned +5 VIRUS');
-    } else {
-        alert('Task already completed!');
-    }
+    window.open('https://t.me/virusmining', '_blank');
+    d.tasks.t1_last = Date.now();
+    d.balance += 10;
+    save();
+    render();
+    alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
 };
 
-// Task 2: Referral / Invite Friend
+// Daily Task 2: Telegram Group/Bot (+10 VIRUS)
 $('task2').onclick=()=>{
-    let refLink = "https://t.me/epidemyvirusbot/virusmining?start=ref_" + (tg?.initDataUnsafe?.user?.id || '12345');
-    if(navigator.clipboard){
-        navigator.clipboard.writeText(refLink);
-        alert('Referral link copied to clipboard! Share with friends to earn +10 VIRUS when they join.');
-    } else {
-        prompt("Copy your referral link:", refLink);
-    }
-    if(!d.tasks.t2){
-        d.tasks.t2=true;
-        d.balance+=10;
-        save();
-        render();
-    }
+    window.open('https://t.me/virusminingbot', '_blank');
+    d.tasks.t2_last = Date.now();
+    d.balance += 10;
+    save();
+    render();
+    alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
 };
 
-// Wallet Connect Simulation
-$('connect-wallet').onclick=()=>{
-    if(!d.wallet){
-        let dummyWallet = "EQA" + Math.random().toString(36).substring(2, 15) + "WalletTON";
-        d.wallet = dummyWallet;
+// Check & Claim 7-Day Active Referral Bonus (+100 Tokens)
+$('claim-ref-bonus').onclick=()=>{
+    let unclaimed = (d.active7DaysRefs || 0) - (d.claimed7DaysRefs || 0);
+    if(unclaimed > 0){
+        let reward = unclaimed * 100;
+        d.balance += reward;
+        d.claimed7DaysRefs = (d.claimed7DaysRefs || 0) + unclaimed;
         save();
         render();
-        alert('TON Wallet Connected Successfully!');
+        alert('Congratulations! You claimed ' + reward + ' VIRUS bonus for ' + unclaimed + ' active 7-day referrals!');
     } else {
-        alert('Wallet already connected: ' + d.wallet);
+        alert('No new eligible 7-day active referrals found yet. Ensure your referrals connect wallet, join tasks, and remain active for 7 days!');
     }
 };
 
