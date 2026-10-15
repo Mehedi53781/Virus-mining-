@@ -139,10 +139,11 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   </div>
 </div>
 
-<!-- TAB 3: TASKS -->
+<!-- TAB 3: TASKS (UTC RESET) -->
 <div id="tab-tasks" class="tab-content">
   <div class="card">
     <h3>📋 Daily Tasks</h3>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Tasks reset daily at 00:00 UTC</p>
     <div style="margin-top:12px;">
       <div class="task-item">
         <div><strong>Join Telegram Channel</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div>
@@ -165,7 +166,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
   <div class="card">
     <h3>🤝 Invite Friends</h3>
-    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Get +50 VIRUS & 🎁 <b>5% Commission</b></p>
+    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Invite friends to boost your mining rate automatically!</p>
     <div style="display:flex; gap:8px;">
       <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Generating link...">
       <button class="btn-secondary" id="copy-ref" onclick="copyRefLink()">Copy</button>
@@ -173,10 +174,10 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   </div>
 
   <div class="card">
-    <h3>💰 Referral Commission Stats</h3>
+    <h3>📈 Referral Mining Tiers</h3>
     <div class="stats-grid">
-      <div class="stat-card"><span>Active Referrals</span><strong id="ref-active-count">0 Active</strong></div>
-      <div class="stat-card"><span>5% Mining Commission</span><strong id="ref-commission">0.0000 VIRUS</strong></div>
+      <div class="stat-card"><span>Total Referrals</span><strong id="ref-active-count">0 Friends</strong></div>
+      <div class="stat-card"><span>Current Speed</span><strong id="ref-speed-boost">10 VIRUS/hr</strong></div>
     </div>
   </div>
 </div>
@@ -215,6 +216,41 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
 <script>
 const tg = window.Telegram?.WebApp;
+const KEY = 'virus_mine_v13';
+const DURATION = 6 * 3600000;
+
+let user = {
+  balance: 0,
+  startAt: Date.now(),
+  refCount: 0,
+  spinsLeft: 5,
+  adsWatched: 0,
+  completedTasks: [],
+  lastTaskDateUTC: ""
+};
+
+try {
+  let saved = localStorage.getItem(KEY);
+  if(saved) user = { ...user, ...JSON.parse(saved) };
+} catch(e) {}
+
+// UTC Date String Helper (YYYY-MM-DD format in UTC)
+function getTodayUTCDateString() {
+  const now = new Date();
+  return now.getUTCFullYear() + '-' + (now.getUTCMonth() + 1) + '-' + now.getUTCDate();
+}
+
+// Reset Daily Tasks if UTC date has changed
+function checkDailyReset() {
+  const todayUTC = getTodayUTCDateString();
+  if (user.lastTaskDateUTC !== todayUTC) {
+    user.completedTasks = [];
+    user.lastTaskDateUTC = todayUTC;
+    user.adsWatched = 0; // Reset ads limit daily as well
+    save();
+  }
+}
+
 if(tg){ 
   tg.ready(); 
   tg.expand(); 
@@ -229,10 +265,19 @@ if(tg){
     document.getElementById('user-avatar').innerText = firstChar;
     document.getElementById('prof-avatar').innerText = firstChar;
 
-    // Telegram Mini App Direct Referral URL format
-    const botUsername = 'virus_mining_bot'; // Replace if your bot handle is slightly different
-    const refLink = `https://t.me/${botUsername}?startapp=${tgUser.id}`;
+    const botUsername = 'epidemyvirusbot';
+    const refLink = `https://t.me/${botUsername}?startapp=ref_${tgUser.id}`;
     document.getElementById('ref-link').value = refLink;
+
+    const startParam = tg.initDataUnsafe?.start_param;
+    if(startParam && startParam.startsWith('ref_')) {
+      const referrerId = startParam.replace('ref_', '');
+      if(referrerId !== String(tgUser.id) && !localStorage.getItem('ref_claimed')) {
+        user.balance += 50;
+        localStorage.setItem('ref_claimed', 'true');
+        save();
+      }
+    }
   }
 }
 
@@ -256,34 +301,34 @@ try {
   console.log("TON Connect Error:", e);
 }
 
-// Adsgram Setup (Block ID: 54024)
-let AdController = null;
-if (window.Adsgram) {
-  AdController = window.Adsgram.init({ blockId: "54024" });
-}
-
-const KEY = 'virus_mine_v10';
-const DURATION = 6 * 3600000;
-
-let user = {
-  balance: 0,
-  startAt: Date.now(),
-  refCount: 0,
-  spinsLeft: 5,
-  adsWatched: 0,
-  completedTasks: []
-};
-
-try {
-  let saved = localStorage.getItem(KEY);
-  if(saved) user = { ...user, ...JSON.parse(saved) };
-} catch(e) {}
-
 function save() { localStorage.setItem(KEY, JSON.stringify(user)); }
 
+function getMiningRate(refs) {
+  if (refs >= 50000) return 100;
+  if (refs >= 10000) return 85;
+  if (refs >= 5000) return 75;
+  if (refs >= 2500) return 65;
+  if (refs >= 1000) return 50;
+  if (refs >= 500) return 40;
+  if (refs >= 250) return 35;
+  if (refs >= 100) return 30;
+  if (refs >= 50) return 25;
+  if (refs >= 25) return 20;
+  if (refs >= 10) return 15;
+  return 10;
+}
+
 function render() {
+  checkDailyReset(); // Check UTC reset status
+  
+  let currentSpeed = getMiningRate(user.refCount);
+  
+  document.getElementById('mining-rate-text').textContent = currentSpeed + ' VIRUS/hr';
+  document.getElementById('ref-active-count').textContent = user.refCount + ' Friends';
+  document.getElementById('ref-speed-boost').textContent = currentSpeed + ' VIRUS/hr';
+
   let elapsed = Math.min(Date.now() - user.startAt, DURATION);
-  let minedAmount = (elapsed / 3600000) * 10;
+  let minedAmount = (elapsed / 3600000) * currentSpeed;
   
   document.getElementById('balance').textContent = (user.balance + minedAmount).toFixed(6);
   document.getElementById('spins-left').textContent = user.spinsLeft;
@@ -297,20 +342,30 @@ function render() {
   let sec = String(s % 60).padStart(2, '0');
   document.getElementById('timer').textContent = `${h}:${m}:${sec}`;
   
+  // Task 1 Status Update
+  const task1Btn = document.getElementById('task1-btn');
   if(user.completedTasks.includes(1)){
-    document.getElementById('task1-btn').innerText = "Done";
-    document.getElementById('task1-btn').disabled = true;
+    task1Btn.innerText = "Done";
+    task1Btn.disabled = true;
+  } else if (!task1Btn.disabled) {
+    task1Btn.innerText = "Join";
   }
+
+  // Task 2 Status Update
+  const task2Btn = document.getElementById('task2-btn');
   if(user.completedTasks.includes(2)){
-    document.getElementById('task2-btn').innerText = "Done";
-    document.getElementById('task2-btn').disabled = true;
+    task2Btn.innerText = "Done";
+    task2Btn.disabled = true;
+  } else if (!task2Btn.disabled) {
+    task2Btn.innerText = "Join";
   }
 }
 
 // CLAIM VIRUS Button Logic
 document.getElementById('claim-btn').onclick = () => {
+  let currentSpeed = getMiningRate(user.refCount);
   let elapsed = Math.min(Date.now() - user.startAt, DURATION);
-  let minedAmount = (elapsed / 3600000) * 10;
+  let minedAmount = (elapsed / 3600000) * currentSpeed;
   
   if (minedAmount < 0.000001) {
     alert('No rewards to claim yet!');
@@ -351,28 +406,32 @@ document.getElementById('spin-btn').onclick = () => {
 };
 
 // Adsgram Video Ads Integration
-document.getElementById('watch-ad-btn').onclick = () => {
+document.getElementById('watch-ad-btn').onclick = async () => {
   if (user.adsWatched >= 10) {
     alert('Daily ad limit reached! (10/10)');
     return;
   }
 
-  if (AdController) {
-    AdController.show().then((result) => {
+  if (window.Adsgram) {
+    try {
+      const adController = window.Adsgram.init({ blockId: "54024" });
+      await adController.show();
+      
       user.adsWatched++;
       user.spinsLeft++;
       save(); 
       render();
       alert('✅ Ad completed! +1 Extra Spin added.');
-    }).catch((err) => {
+    } catch (err) {
+      console.error("Adsgram Error:", err);
       alert('No ad available right now or ad was skipped.');
-    });
+    }
   } else {
-    alert('Adsgram SDK is still initializing or blocked.');
+    alert('Adsgram SDK is still loading. Please check your network.');
   }
 };
 
-// Task Timer System
+// Task Timer System with Daily UTC Tracking
 function startTask(taskId, link, reward) {
   window.open(link, '_blank');
   let btn = document.getElementById(`task${taskId}-btn`);
@@ -389,7 +448,8 @@ function startTask(taskId, link, reward) {
       btn.onclick = () => {
         user.balance += reward;
         user.completedTasks.push(taskId);
-        save(); render();
+        save(); 
+        render();
         alert(`🎉 Claimed +${reward} VIRUS!`);
       };
     }
@@ -425,5 +485,5 @@ function switchTab(tabId, el) {
 render(); setInterval(render, 1000);
 </script>
 </body>
-    </html>
-          
+      </html>
+                                                                                                           
