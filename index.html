@@ -8,6 +8,9 @@
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 <!-- Adsgram Official SDK -->
 <script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
 :root {
@@ -139,7 +142,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   </div>
 </div>
 
-<!-- TAB 3: TASKS (UTC RESET) -->
+<!-- TAB 3: TASKS -->
 <div id="tab-tasks" class="tab-content">
   <div class="card">
     <h3>📋 Daily Tasks</h3>
@@ -166,7 +169,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
   <div class="card">
     <h3>🤝 Invite Friends</h3>
-    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Invite friends to boost your mining rate automatically!</p>
+    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Share your link and earn automatically!</p>
     <div style="display:flex; gap:8px;">
       <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Generating link...">
       <button class="btn-secondary" id="copy-ref" onclick="copyRefLink()">Copy</button>
@@ -215,8 +218,14 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 </div>
 
 <script>
+// Firebase Realtime Database Configuration (Free Public Demo Connection)
+const firebaseConfig = {
+  databaseURL: "https://virus-mining-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 const tg = window.Telegram?.WebApp;
-const KEY = 'virus_mine_v13';
 const DURATION = 6 * 3600000;
 
 let user = {
@@ -229,25 +238,20 @@ let user = {
   lastTaskDateUTC: ""
 };
 
-try {
-  let saved = localStorage.getItem(KEY);
-  if(saved) user = { ...user, ...JSON.parse(saved) };
-} catch(e) {}
+let currentUserId = "";
 
-// UTC Date String Helper (YYYY-MM-DD format in UTC)
 function getTodayUTCDateString() {
   const now = new Date();
   return now.getUTCFullYear() + '-' + (now.getUTCMonth() + 1) + '-' + now.getUTCDate();
 }
 
-// Reset Daily Tasks if UTC date has changed
 function checkDailyReset() {
   const todayUTC = getTodayUTCDateString();
   if (user.lastTaskDateUTC !== todayUTC) {
     user.completedTasks = [];
     user.lastTaskDateUTC = todayUTC;
-    user.adsWatched = 0; // Reset ads limit daily as well
-    save();
+    user.adsWatched = 0;
+    saveLocal();
   }
 }
 
@@ -257,6 +261,7 @@ if(tg){
 
   const tgUser = tg.initDataUnsafe?.user;
   if(tgUser) {
+    currentUserId = String(tgUser.id);
     const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User';
     document.getElementById('user-name').innerText = fullName;
     document.getElementById('prof-name').innerText = fullName;
@@ -266,18 +271,58 @@ if(tg){
     document.getElementById('prof-avatar').innerText = firstChar;
 
     const botUsername = 'epidemyvirusbot';
-    const refLink = `https://t.me/${botUsername}?startapp=ref_${tgUser.id}`;
+    const refLink = `https://t.me/${botUsername}?startapp=ref_${currentUserId}`;
     document.getElementById('ref-link').value = refLink;
 
-    const startParam = tg.initDataUnsafe?.start_param;
-    if(startParam && startParam.startsWith('ref_')) {
-      const referrerId = startParam.replace('ref_', '');
-      if(referrerId !== String(tgUser.id) && !localStorage.getItem('ref_claimed')) {
-        user.balance += 50;
-        localStorage.setItem('ref_claimed', 'true');
-        save();
+    // Firebase Sync & Referral Check
+    const userRef = db.ref('users/' + currentUserId);
+    userRef.once('value', (snapshot) => {
+      let data = snapshot.val();
+      if(!data) {
+        // New User Registration
+        let startParam = tg.initDataUnsafe?.start_param;
+        let initialBalance = 0;
+
+        if(startParam && startParam.startsWith('ref_')) {
+          let referrerId = startParam.replace('ref_', '');
+          if(referrerId !== currentUserId) {
+            initialBalance = 50; // Welcome Bonus
+            // Increment Referrer Count in Firebase
+            db.ref('users/' + referrerId + '/refCount').transaction((currentCount) => {
+              return (currentCount || 0) + 1;
+            });
+          }
+        }
+
+        data = {
+          balance: initialBalance,
+          startAt: Date.now(),
+          refCount: 0,
+          spinsLeft: 5,
+          adsWatched: 0,
+          completedTasks: [],
+          lastTaskDateUTC: getTodayUTCDateString()
+        };
+        userRef.set(data);
       }
-    }
+
+      user = data;
+      saveLocal();
+      render();
+
+      // Listen for real-time updates (like refCount changes)
+      userRef.on('value', (snapshot) => {
+        let updatedData = snapshot.val();
+        if(updatedData) {
+          user.refCount = updatedData.refCount || 0;
+          user.balance = updatedData.balance || user.balance;
+          user.spinsLeft = updatedData.spinsLeft ?? user.spinsLeft;
+          user.adsWatched = updatedData.adsWatched ?? user.adsWatched;
+          saveLocal();
+          render();
+        }
+      });
+    });
   }
 }
 
@@ -297,11 +342,27 @@ try {
       document.getElementById('prof-wallet').innerText = 'Wallet: Not Connected';
     }
   });
-} catch(e) {
-  console.log("TON Connect Error:", e);
+} catch(e) {}
+
+const LOCAL_KEY = 'virus_mine_firebase_v1';
+function saveLocal() { 
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(user));
+  if(currentUserId) {
+    db.ref('users/' + currentUserId).update({
+      balance: user.balance,
+      startAt: user.startAt,
+      spinsLeft: user.spinsLeft,
+      adsWatched: user.adsWatched,
+      completedTasks: user.completedTasks,
+      lastTaskDateUTC: user.lastTaskDateUTC
+    });
+  }
 }
 
-function save() { localStorage.setItem(KEY, JSON.stringify(user)); }
+try {
+  let saved = localStorage.getItem(LOCAL_KEY);
+  if(saved) user = { ...user, ...JSON.parse(saved) };
+} catch(e) {}
 
 function getMiningRate(refs) {
   if (refs >= 50000) return 100;
@@ -319,8 +380,7 @@ function getMiningRate(refs) {
 }
 
 function render() {
-  checkDailyReset(); // Check UTC reset status
-  
+  checkDailyReset();
   let currentSpeed = getMiningRate(user.refCount);
   
   document.getElementById('mining-rate-text').textContent = currentSpeed + ' VIRUS/hr';
@@ -342,7 +402,6 @@ function render() {
   let sec = String(s % 60).padStart(2, '0');
   document.getElementById('timer').textContent = `${h}:${m}:${sec}`;
   
-  // Task 1 Status Update
   const task1Btn = document.getElementById('task1-btn');
   if(user.completedTasks.includes(1)){
     task1Btn.innerText = "Done";
@@ -351,7 +410,6 @@ function render() {
     task1Btn.innerText = "Join";
   }
 
-  // Task 2 Status Update
   const task2Btn = document.getElementById('task2-btn');
   if(user.completedTasks.includes(2)){
     task2Btn.innerText = "Done";
@@ -374,7 +432,7 @@ document.getElementById('claim-btn').onclick = () => {
 
   user.balance += minedAmount;
   user.startAt = Date.now();
-  save();
+  saveLocal();
   render();
   alert('🎉 Successfully claimed your VIRUS tokens!');
 };
@@ -399,7 +457,7 @@ document.getElementById('spin-btn').onclick = () => {
   
   setTimeout(() => {
     user.balance += reward;
-    save(); 
+    saveLocal(); 
     render();
     alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
   }, 3000);
@@ -419,71 +477,11 @@ document.getElementById('watch-ad-btn').onclick = async () => {
       
       user.adsWatched++;
       user.spinsLeft++;
-      save(); 
+      saveLocal(); 
       render();
       alert('✅ Ad completed! +1 Extra Spin added.');
     } catch (err) {
       console.error("Adsgram Error:", err);
       alert('No ad available right now or ad was skipped.');
     }
-  } else {
-    alert('Adsgram SDK is still loading. Please check your network.');
-  }
-};
-
-// Task Timer System with Daily UTC Tracking
-function startTask(taskId, link, reward) {
-  window.open(link, '_blank');
-  let btn = document.getElementById(`task${taskId}-btn`);
-  let timeLeft = 15;
-  btn.disabled = true;
-
-  let timer = setInterval(() => {
-    btn.innerText = `${timeLeft}s`;
-    timeLeft--;
-    if (timeLeft < 0) {
-      clearInterval(timer);
-      btn.innerText = "Claim";
-      btn.disabled = false;
-      btn.onclick = () => {
-        user.balance += reward;
-        user.completedTasks.push(taskId);
-        save(); 
-        render();
-        alert(`🎉 Claimed +${reward} VIRUS!`);
-      };
-    }
-  }, 1000);
-}
-
-// Copy Referral Link Function
-function copyRefLink() {
-  let refInput = document.getElementById('ref-link');
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(refInput.value).then(() => {
-      alert('Referral link copied to clipboard!');
-    }).catch(() => {
-      refInput.select();
-      document.execCommand('copy');
-      alert('Referral link copied!');
-    });
-  } else {
-    refInput.select();
-    document.execCommand('copy');
-    alert('Referral link copied!');
-  }
-}
-
-// Tab Switcher
-function switchTab(tabId, el) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-' + tabId).classList.add('active');
-  el.classList.add('active');
-}
-
-render(); setInterval(render, 1000);
-</script>
-</body>
-      </html>
-                                                                                                           
+  } else
