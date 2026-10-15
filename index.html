@@ -6,6 +6,8 @@
 <title>VIRUS · Mine & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<!-- Adsgram Official SDK -->
+<script src="https://sad.adsgram.ai/js/sad-adsgram.min.js"></script>
 
 <style>
 :root {
@@ -75,10 +77,6 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; cursor: pointer; text-decoration: none; width: 20%; }
 .nav-item.active { color: var(--accent); }
 .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
-
-/* Modal Popup Ad */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; place-items: center; padding: 20px; }
-.modal-content { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; text-align: center; max-width: 360px; width: 100%; position: relative; }
 </style>
 </head>
 <body>
@@ -141,18 +139,18 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   </div>
 </div>
 
-<!-- TAB 3: TASKS -->
+<!-- TAB 3: TASKS (WITH WORKING TIMER) -->
 <div id="tab-tasks" class="tab-content">
   <div class="card">
     <h3>📋 Daily Tasks</h3>
     <div style="margin-top:12px;">
       <div class="task-item">
         <div><strong>Join Telegram Channel</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div>
-        <button class="btn-secondary" onclick="window.open('https://t.me/virusmining')">Join</button>
+        <button class="btn-secondary" id="task1-btn" onclick="startTask(1, 'https://t.me/virusmining', 10)">Join</button>
       </div>
       <div class="task-item">
         <div><strong>Join Community Group</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div>
-        <button class="btn-secondary" onclick="window.open('https://t.me/virusminingbot')">Join</button>
+        <button class="btn-secondary" id="task2-btn" onclick="startTask(2, 'https://t.me/virusminingbot', 10)">Join</button>
       </div>
     </div>
   </div>
@@ -160,15 +158,14 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
 <!-- TAB 4: FRIENDS (REFERRALS) -->
 <div id="tab-friends" class="tab-content">
-  <!-- ANTI-CHEAT WARNING CARD -->
   <div class="warning-card">
     <b>⚠️ Anti-Cheat & Fair Play Policy:</b><br>
-    Fake, bot, or duplicate self-referrals are strictly prohibited. Cheating accounts will be automatically banned and ineligible for any payments/airdrops!
+    Fake, bot, or duplicate self-referrals are strictly prohibited.
   </div>
 
   <div class="card">
     <h3>🤝 Invite Friends</h3>
-    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Get +50 VIRUS & 🎁 <b>5% Commission</b> from active referrals' mining rewards!</p>
+    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Get +50 VIRUS & 🎁 <b>5% Commission</b></p>
     <div style="display:flex; gap:8px;">
       <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Loading...">
       <button class="btn-secondary" id="copy-ref">Copy</button>
@@ -182,23 +179,6 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <div class="stat-card"><span>5% Mining Commission</span><strong id="ref-commission">0.0000 VIRUS</strong></div>
     </div>
   </div>
-
-  <div class="card">
-    <h3>🚀 Dynamic Rate Levels</h3>
-    <div class="rate-list">
-      <div class="rate-row" id="r-10"><span>10 Referrals</span><strong>15 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-25"><span>25 Referrals</span><strong>20 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-50"><span>50 Referrals</span><strong>25 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-100"><span>100 Referrals</span><strong>30 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-250"><span>250 Referrals</span><strong>35 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-500"><span>500 Referrals</span><strong>40 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-1000"><span>1,000 Referrals</span><strong>50 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-2500"><span>2,500 Referrals</span><strong>65 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-5000"><span>5,000 Referrals</span><strong>75 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-10000"><span>10,000 Referrals</span><strong>85 VIRUS/hr</strong></div>
-      <div class="rate-row" id="r-50000"><span>50,000 Referrals</span><strong>100 VIRUS/hr</strong></div>
-    </div>
-  </div>
 </div>
 
 <!-- TAB 5: PROFILE -->
@@ -210,48 +190,35 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   </div>
   <div class="card">
     <div class="rate-row"><span>Account Status</span><strong id="acc-status" style="color:var(--accent);">Active / Clean</strong></div>
-    <div class="rate-row"><span>Total Spins Earned</span><strong id="total-spins">0</strong></div>
     <div class="rate-row"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div>
-    <div class="rate-row"><span>5% Referral Earnings</span><strong id="prof-commission">0.0000 VIRUS</strong></div>
   </div>
 </div>
 
 <!-- BOTTOM NAVIGATION BAR -->
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchTab('mine', this)">
-    <svg viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>
-    Mine
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg> Mine
   </div>
   <div class="nav-item" onclick="switchTab('spin', this)">
-    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-    Spin & Ads
+    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> Spin & Ads
   </div>
   <div class="nav-item" onclick="switchTab('tasks', this)">
-    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-    Tasks
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Tasks
   </div>
   <div class="nav-item" onclick="switchTab('friends', this)">
-    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-    Friends
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> Friends
   </div>
   <div class="nav-item" onclick="switchTab('profile', this)">
-    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-    Profile
-  </div>
-</div>
-
-<!-- AUTO OPEN SPONSORED AD POPUP -->
-<div class="modal" id="ad-modal">
-  <div class="modal-content">
-    <h3 style="color:var(--accent);">📢 Sponsored Ad</h3>
-    <p style="font-size:13px; color:var(--text-muted); margin:12px 0;">Welcome to VIRUS Mining Network! Join our official channel for latest updates and giveaways.</p>
-    <button class="btn-primary" onclick="closeAdModal()">Continue to Mining</button>
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Profile
   </div>
 </div>
 
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){ tg.ready(); tg.expand(); }
+
+// Initialize Adsgram (Replace with your actual Adsgram Block ID)
+const AdController = window.Adsgram ? window.Adsgram.init({ blockId: "your-adsgram-block-id" }) : null;
 
 const KEY = 'virus_mine_v10';
 const DURATION = 6 * 3600000;
@@ -263,8 +230,8 @@ let user = {
   spinsLeft: 5,
   adsWatched: 0,
   wallet: null,
-  refCommissionEarned: 0,
-  isBanned: false
+  completedTasks: [],
+  refCommissionEarned: 0
 };
 
 try {
@@ -272,69 +239,16 @@ try {
   if(saved) user = { ...user, ...JSON.parse(saved) };
 } catch(e) {}
 
-// Basic Anti-Cheat Check
-function checkAntiCheat() {
-  // If user tries rapid unnatural inputs or multi-tab duplication
-  if (user.isBanned) {
-    document.getElementById('acc-status').textContent = 'BANNED (Fake/Bot Activity)';
-    document.getElementById('acc-status').style.color = 'var(--danger)';
-    document.getElementById('status-badge').textContent = '❌ Account Banned';
-    document.getElementById('status-badge').style.color = 'var(--danger)';
-    document.getElementById('claim-btn').disabled = true;
-    document.getElementById('spin-btn').disabled = true;
-    document.getElementById('watch-ad-btn').disabled = true;
-  }
-}
-
-// Calculate Mining Rate from Referrals
-function getMiningRate() {
-  let r = user.refCount || 0;
-  if (r >= 50000) return 100;
-  if (r >= 10000) return 85;
-  if (r >= 5000) return 75;
-  if (r >= 2500) return 65;
-  if (r >= 1000) return 50;
-  if (r >= 500) return 40;
-  if (r >= 250) return 35;
-  if (r >= 100) return 30;
-  if (r >= 50) return 25;
-  if (r >= 25) return 20;
-  if (r >= 10) return 15;
-  return 10;
-}
-
-// TON Connect Integration
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
-  buttonRootId: 'ton-connect-btn'
-});
-
-tonConnectUI.onStatusChange(w => {
-  if (w) {
-    user.wallet = w.account.address;
-    document.getElementById('prof-wallet').textContent = 'Wallet: ' + user.wallet.slice(0, 4) + '...' + user.wallet.slice(-4);
-  }
-  save();
-});
-
 function save() { localStorage.setItem(KEY, JSON.stringify(user)); }
 
 function render() {
-  checkAntiCheat();
-  if (user.isBanned) return;
-
-  let rate = getMiningRate();
   let elapsed = Math.min(Date.now() - user.startAt, DURATION);
-  let earned = (elapsed / 3600000) * rate;
+  let minedAmount = (elapsed / 3600000) * 10;
   
-  document.getElementById('balance').textContent = (user.balance + earned).toFixed(6);
-  document.getElementById('mining-rate-text').textContent = rate + ' VIRUS/hr';
+  document.getElementById('balance').textContent = (user.balance + minedAmount).toFixed(6);
   document.getElementById('spins-left').textContent = user.spinsLeft;
   document.getElementById('ads-count').textContent = user.adsWatched + ' / 10';
   document.getElementById('prof-ads').textContent = user.adsWatched + ' / 10';
-  document.getElementById('ref-active-count').textContent = user.refCount + ' Active';
-  document.getElementById('ref-commission').textContent = (user.refCommissionEarned || 0).toFixed(4) + ' VIRUS';
-  document.getElementById('prof-commission').textContent = (user.refCommissionEarned || 0).toFixed(4) + ' VIRUS';
 
   let remaining = DURATION - elapsed;
   let s = Math.max(0, Math.floor(remaining / 1000));
@@ -342,49 +256,35 @@ function render() {
   let m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
   let sec = String(s % 60).padStart(2, '0');
   document.getElementById('timer').textContent = `${h}:${m}:${sec}`;
+  
+  // Update task states
+  if(user.completedTasks.includes(1)){
+    document.getElementById('task1-btn').innerText = "Done";
+    document.getElementById('task1-btn').disabled = true;
+  }
+  if(user.completedTasks.includes(2)){
+    document.getElementById('task2-btn').innerText = "Done";
+    document.getElementById('task2-btn').disabled = true;
+  }
 }
 
-// Tab Switcher
-function switchTab(tabId, el) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-' + tabId).classList.add('active');
-  el.classList.add('active');
-}
-
-// Claim Mining Points & Calculate 5% Commission
-document.getElementById('claim-btn').onclick = () => {
-  if (user.isBanned) {
-    alert('❌ Account Banned due to fake/bot referral activity!');
-    return;
-  }
-  let rate = getMiningRate();
-  let elapsed = Math.min(Date.now() - user.startAt, DURATION);
-  let minedAmount = (elapsed / 3600000) * rate;
-  
-  user.balance += minedAmount;
-  
-  // 5% Referral Commission Simulation
-  if (user.refCount > 0) {
-    let comm = minedAmount * 0.05;
-    user.refCommissionEarned = (user.refCommissionEarned || 0) + comm;
-  }
-
-  user.startAt = Date.now();
-  save(); render();
-  alert('VIRUS tokens claimed successfully!');
-};
-
-// Lucky Spin Action
-const spinRewards = [50, 10, 5, 2, 1];
+// Fixed Random Spin Logic (Probabilities for Rewards)
 document.getElementById('spin-btn').onclick = () => {
-  if (user.isBanned) return;
   if (user.spinsLeft <= 0) {
-    alert('No spins left! Watch ads or invite friends to get more spins.');
+    alert('No spins left!');
     return;
   }
   user.spinsLeft--;
-  let reward = spinRewards[Math.floor(Math.random() * spinRewards.length)];
+
+  // Random Weighted Rewards (50 points chance is 5%)
+  const rand = Math.random() * 100;
+  let reward = 1;
+  if (rand < 5) reward = 50;         // 5% Chance
+  else if (rand < 20) reward = 10;   // 15% Chance
+  else if (rand < 50) reward = 5;    // 30% Chance
+  else if (rand < 80) reward = 2;    // 30% Chance
+  else reward = 1;                   // 20% Chance
+
   let deg = Math.floor(Math.random() * 360) + 1440;
   document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
   
@@ -395,38 +295,62 @@ document.getElementById('spin-btn').onclick = () => {
   }, 3000);
 };
 
-// Watch Ad Action
+// Real Adsgram Video Ads Function
 document.getElementById('watch-ad-btn').onclick = () => {
-  if (user.isBanned) return;
   if (user.adsWatched >= 10) {
-    alert('Daily Watch Ads Limit (10/10) reached! Come back tomorrow.');
+    alert('Daily limit reached!');
     return;
   }
-  alert('▶️ Playing Sponsored Video Ad... (Simulated)');
-  setTimeout(() => {
+
+  if (AdController) {
+    AdController.show().then((result) => {
+      user.adsWatched++;
+      user.spinsLeft++;
+      save(); render();
+      alert('✅ Ad completed! +1 Extra Spin added.');
+    }).catch((err) => {
+      alert('Ad loading failed or wasn\'t completed.');
+    });
+  } else {
+    // Fallback test mode
     user.adsWatched++;
     user.spinsLeft++;
     save(); render();
-    alert('✅ Ad completed! +1 Extra Spin added.');
-  }, 2000);
+    alert('Test Mode: +1 Spin added.');
+  }
 };
 
-// Auto Open Ad Popup on Start
-setTimeout(() => {
-  document.getElementById('ad-modal').style.display = 'grid';
-}, 1000);
+// Working Task System with 15-second timer
+function startTask(taskId, link, reward) {
+  window.open(link, '_blank');
+  let btn = document.getElementById(`task${taskId}-btn`);
+  let timeLeft = 15;
+  btn.disabled = true;
 
-function closeAdModal() {
-  document.getElementById('ad-modal').style.display = 'none';
+  let timer = setInterval(() => {
+    btn.innerText = `${timeLeft}s`;
+    timeLeft--;
+    if (timeLeft < 0) {
+      clearInterval(timer);
+      btn.innerText = "Claim";
+      btn.disabled = false;
+      btn.onclick = () => {
+        user.balance += reward;
+        user.completedTasks.push(taskId);
+        save(); render();
+        alert(`🎉 Claimed +${reward} VIRUS!`);
+      };
+    }
+  }, 1000);
 }
 
-// Ref Link Setup
-let uid = tg?.initDataUnsafe?.user?.id || '123456';
-document.getElementById('ref-link').value = "https://t.me/epidemyvirusbot/virusmining?start=ref_" + uid;
-document.getElementById('copy-ref').onclick = () => {
-  navigator.clipboard.writeText(document.getElementById('ref-link').value);
-  alert('Referral link copied!');
-};
+// Tab Switcher
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  el.classList.add('active');
+}
 
 render(); setInterval(render, 1000);
 </script>
