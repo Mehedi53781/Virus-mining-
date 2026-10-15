@@ -8,9 +8,6 @@
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 <!-- Adsgram Official SDK -->
 <script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
 :root {
@@ -184,10 +181,10 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
     </div>
   </div>
 
-  <!-- TEST TOOL: Reset Local Cache for Testing Referrals on Same Device -->
+  <!-- TEST TOOL: Reset Local Storage for Testing -->
   <div class="card" style="border:1px dashed var(--danger);">
-    <h4 style="color:var(--danger); font-size:13px; margin-bottom:6px;">🧪 Testing Tools (Self-Test Mode)</h4>
-    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">অন্য অ্যাকাউন্ট দিয়ে টেস্ট করার আগে লোকাল ডাটা ক্লিয়ার করতে নিচের বাটনে চাপ দিন:</p>
+    <h4 style="color:var(--danger); font-size:13px; margin-bottom:6px;">🧪 Referral Test Helper</h4>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">অন্য অ্যাকাউন্ট দিয়ে টেস্ট করার পূর্বে লোকাল ডাটা রিসেট করতে নিচের বাটনে টিপুন:</p>
     <button class="btn-secondary" style="background:var(--danger); color:#fff; border:none; width:100%;" onclick="clearTestCache()">Clear Cache for New Account Test</button>
   </div>
 </div>
@@ -225,8 +222,8 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 </div>
 
 <script>
-const LOCAL_KEY = 'virus_mine_fixed_v16';
 const DURATION = 6 * 3600000;
+let LOCAL_KEY = 'virus_mine_stable_v100';
 
 let user = {
   balance: 0,
@@ -238,16 +235,10 @@ let user = {
   lastTaskDateUTC: ""
 };
 
-let currentUserId = "";
-
-// Load Saved Data
-try {
-  let saved = localStorage.getItem(LOCAL_KEY);
-  if(saved) user = { ...user, ...JSON.parse(saved) };
-} catch(e) {}
+let currentUserId = "guest";
 
 function saveLocal() { 
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(user));
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(user)); } catch(e){}
 }
 
 function getTodayUTCDateString() {
@@ -265,15 +256,19 @@ function checkDailyReset() {
   }
 }
 
-// Telegram Initialization
+// Initialize WebApp Data
 const tg = window.Telegram?.WebApp;
 if(tg){ 
-  tg.ready(); 
-  tg.expand(); 
+  try {
+    tg.ready(); 
+    tg.expand(); 
+  } catch(e){}
 
   const tgUser = tg.initDataUnsafe?.user;
   if(tgUser) {
     currentUserId = String(tgUser.id);
+    LOCAL_KEY = 'virus_mine_' + currentUserId;
+    
     const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User';
     document.getElementById('user-name').innerText = fullName;
     document.getElementById('prof-name').innerText = fullName;
@@ -288,74 +283,38 @@ if(tg){
   }
 }
 
-// Safe Firebase Realtime Sync with Dynamic Referral Increment
+// Load User Saved Local State
 try {
-  const firebaseConfig = {
-    databaseURL: "https://virus-mining-default-rtdb.firebaseio.com/"
-  };
-  if (window.firebase) {
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  let saved = localStorage.getItem(LOCAL_KEY);
+  if(saved) user = { ...user, ...JSON.parse(saved) };
+} catch(e) {}
 
-    if (currentUserId) {
-      const userRef = db.ref('users/' + currentUserId);
+// Referral Tracking Logic
+if (tg) {
+  let startParam = tg.initDataUnsafe?.start_param;
+  if (startParam && startParam.startsWith('ref_')) {
+    let referrerId = startParam.replace('ref_', '');
+    if (referrerId && referrerId !== currentUserId && !localStorage.getItem('ref_processed_' + currentUserId)) {
+      user.balance += 50; // Welcome Bonus
+      localStorage.setItem('ref_processed_' + currentUserId, 'true');
       
-      userRef.once('value', (snapshot) => {
-        let data = snapshot.val();
-        
-        if (!data) {
-          // Identify if registered via referral parameter
-          let startParam = tg?.initDataUnsafe?.start_param;
-          let initialBalance = user.balance;
-
-          if (startParam && startParam.startsWith('ref_')) {
-            let referrerId = startParam.replace('ref_', '');
-            if (referrerId && referrerId !== currentUserId) {
-              initialBalance += 50; // Welcome Bonus for Referral
-
-              // Increment referrer's count dynamically in Firebase
-              db.ref('users/' + referrerId + '/refCount').transaction((c) => (c || 0) + 1);
-            }
-          }
-
-          data = {
-            balance: initialBalance,
-            startAt: Date.now(),
-            refCount: 0,
-            spinsLeft: 5,
-            adsWatched: 0,
-            completedTasks: [],
-            lastTaskDateUTC: getTodayUTCDateString()
-          };
-          userRef.set(data);
-        }
-
-        user.refCount = data.refCount || user.refCount;
-        user.balance = Math.max(user.balance, data.balance || 0);
-        saveLocal();
-        render();
-      });
-
-      // Realtime Listener to reflect new referral counts instantly
-      userRef.on('value', (snapshot) => {
-        let updated = snapshot.val();
-        if (updated) {
-          user.refCount = updated.refCount || 0;
-          saveLocal();
-          render();
-        }
-      });
+      // Save Referral Boost for Referrer
+      let refKey = 'virus_ref_count_' + referrerId;
+      let existingRefs = parseInt(localStorage.getItem(refKey) || '0');
+      localStorage.setItem(refKey, existingRefs + 1);
+      saveLocal();
     }
   }
-} catch(err) {
-  console.log("Firebase bypass enabled:", err);
 }
 
-// Clear Cache Button for Same-Device Testing
-function clearTestCache() {
-  localStorage.clear();
-  alert("✅ Local cache cleared! Now switch Telegram accounts and open your referral link.");
-  location.reload();
+// Sync referral count for referrer
+if (currentUserId !== 'guest') {
+  let myRefKey = 'virus_ref_count_' + currentUserId;
+  let storedRefCount = parseInt(localStorage.getItem(myRefKey) || '0');
+  if (storedRefCount > user.refCount) {
+    user.refCount = storedRefCount;
+    saveLocal();
+  }
 }
 
 // TON Connect Setup
@@ -375,6 +334,12 @@ try {
     }
   });
 } catch(e) {}
+
+function clearTestCache() {
+  localStorage.clear();
+  alert("✅ Cache cleared! Switch Telegram account and open referral link.");
+  location.reload();
+}
 
 function getMiningRate(refs) {
   if (refs >= 50000) return 100;
@@ -471,4 +436,48 @@ document.getElementById('spin-btn').onclick = () => {
     user.balance += reward;
     saveLocal(); 
     render();
-    alert(`🎉 Congratulations! You won ${reward} VIRUS t
+    alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
+  }, 3000);
+};
+
+// Adsgram Video Ads Integration
+document.getElementById('watch-ad-btn').onclick = async () => {
+  if (user.adsWatched >= 10) {
+    alert('Daily ad limit reached! (10/10)');
+    return;
+  }
+
+  if (window.Adsgram) {
+    try {
+      const adController = window.Adsgram.init({ blockId: "54024" });
+      await adController.show();
+      
+      user.adsWatched++;
+      user.spinsLeft++;
+      saveLocal(); 
+      render();
+      alert('✅ Ad completed! +1 Extra Spin added.');
+    } catch (err) {
+      console.error("Adsgram Error:", err);
+      alert('No ad available right now or ad was skipped.');
+    }
+  } else {
+    alert('Adsgram SDK is still loading. Please check your network.');
+  }
+};
+
+// Task System
+function startTask(taskId, link, reward) {
+  window.open(link, '_blank');
+  let btn = document.getElementById(`task${taskId}-btn`);
+  let timeLeft = 15;
+  btn.disabled = true;
+
+  let timer = setInterval(() => {
+    btn.innerText = `${timeLeft}s`;
+    timeLeft--;
+    if (timeLeft < 0) {
+      clearInterval(timer);
+      btn.innerText = "Claim";
+      btn.disabled = false;
+      btn.onclick 
