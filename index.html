@@ -219,7 +219,6 @@ if(tg){
   tg.ready(); 
   tg.expand(); 
 
-  // Dynamic Telegram User Details
   const tgUser = tg.initDataUnsafe?.user;
   if(tgUser) {
     const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User';
@@ -230,17 +229,15 @@ if(tg){
     document.getElementById('user-avatar').innerText = firstChar;
     document.getElementById('prof-avatar').innerText = firstChar;
 
-    // Dynamic Referral Link
-    const botUsername = 'virus_mining_bot'; // Replace with your exact Bot Username if different
+    const botUsername = 'virus_mining_bot';
     const refLink = `https://t.me/${botUsername}?start=ref_${tgUser.id}`;
     document.getElementById('ref-link').value = refLink;
   }
 }
 
-// TON CONNECT INITIALIZATION
-let tonConnectUI = null;
+// TON CONNECT
 try {
-  tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
     buttonRootId: 'ton-connect-btn'
   });
@@ -258,8 +255,11 @@ try {
   console.log("TON Connect Error:", e);
 }
 
-// Initialize Adsgram with Block ID 54024
-const AdController = window.Adsgram ? window.Adsgram.init({ blockId: "54024" }) : null;
+// Adsgram Setup (Block ID: 54024)
+let AdController = null;
+if (window.Adsgram) {
+  AdController = window.Adsgram.init({ blockId: "54024" });
+}
 
 const KEY = 'virus_mine_v10';
 const DURATION = 6 * 3600000;
@@ -323,36 +323,36 @@ document.getElementById('claim-btn').onclick = () => {
   alert('🎉 Successfully claimed your VIRUS tokens!');
 };
 
-// Spin Wheel Logic
+// Balanced Spin Wheel Rewards Logic
 document.getElementById('spin-btn').onclick = () => {
   if (user.spinsLeft <= 0) {
-    alert('No spins left!');
+    alert('No spins left! Watch ads to get extra spins.');
     return;
   }
   user.spinsLeft--;
 
   const rand = Math.random() * 100;
   let reward = 1;
-  if (rand < 5) reward = 50;
-  else if (rand < 20) reward = 10;
-  else if (rand < 50) reward = 5;
-  else if (rand < 80) reward = 2;
-  else reward = 1;
+  if (rand < 5) reward = 10;         // 5% Chance for 10 Tokens
+  else if (rand < 25) reward = 5;    // 20% Chance for 5 Tokens
+  else if (rand < 60) reward = 2;    // 35% Chance for 2 Tokens
+  else reward = 1;                   // 40% Chance for 1 Token
 
   let deg = Math.floor(Math.random() * 360) + 1440;
   document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
   
   setTimeout(() => {
     user.balance += reward;
-    save(); render();
+    save(); 
+    render();
     alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
   }, 3000);
 };
 
-// Adsgram Integration
+// Strict Adsgram Video Ads Integration (No Fake Spin Allowed)
 document.getElementById('watch-ad-btn').onclick = () => {
   if (user.adsWatched >= 10) {
-    alert('Daily ad limit reached!');
+    alert('Daily ad limit reached! (10/10)');
     return;
   }
 
@@ -360,16 +360,14 @@ document.getElementById('watch-ad-btn').onclick = () => {
     AdController.show().then((result) => {
       user.adsWatched++;
       user.spinsLeft++;
-      save(); render();
+      save(); 
+      render();
       alert('✅ Ad completed! +1 Extra Spin added.');
     }).catch((err) => {
-      alert('Ad loading failed or was not fully viewed.');
+      alert('No ad available right now or ad was skipped. Please try again in a few moments.');
     });
   } else {
-    user.adsWatched++;
-    user.spinsLeft++;
-    save(); render();
-    alert('Test Mode: +1 Extra Spin added.');
+    alert('Adsgram SDK is still initializing or blocked. Please refresh.');
   }
 };
 
@@ -426,5 +424,5 @@ function switchTab(tabId, el) {
 render(); setInterval(render, 1000);
 </script>
 </body>
-    </html>
-  
+  </html>
+                                                            
