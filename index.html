@@ -183,6 +183,13 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <div class="stat-card"><span>Current Speed</span><strong id="ref-speed-boost">10 VIRUS/hr</strong></div>
     </div>
   </div>
+
+  <!-- TEST TOOL: Reset Local Cache for Testing Referrals on Same Device -->
+  <div class="card" style="border:1px dashed var(--danger);">
+    <h4 style="color:var(--danger); font-size:13px; margin-bottom:6px;">🧪 Testing Tools (Self-Test Mode)</h4>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">অন্য অ্যাকাউন্ট দিয়ে টেস্ট করার আগে লোকাল ডাটা ক্লিয়ার করতে নিচের বাটনে চাপ দিন:</p>
+    <button class="btn-secondary" style="background:var(--danger); color:#fff; border:none; width:100%;" onclick="clearTestCache()">Clear Cache for New Account Test</button>
+  </div>
 </div>
 
 <!-- TAB 5: PROFILE -->
@@ -218,14 +225,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 </div>
 
 <script>
-// Firebase Realtime Database Configuration (Free Public Demo Connection)
-const firebaseConfig = {
-  databaseURL: "https://virus-mining-default-rtdb.firebaseio.com/"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-const tg = window.Telegram?.WebApp;
+const LOCAL_KEY = 'virus_mine_fixed_v16';
 const DURATION = 6 * 3600000;
 
 let user = {
@@ -239,6 +239,16 @@ let user = {
 };
 
 let currentUserId = "";
+
+// Load Saved Data
+try {
+  let saved = localStorage.getItem(LOCAL_KEY);
+  if(saved) user = { ...user, ...JSON.parse(saved) };
+} catch(e) {}
+
+function saveLocal() { 
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(user));
+}
 
 function getTodayUTCDateString() {
   const now = new Date();
@@ -255,6 +265,8 @@ function checkDailyReset() {
   }
 }
 
+// Telegram Initialization
+const tg = window.Telegram?.WebApp;
 if(tg){ 
   tg.ready(); 
   tg.expand(); 
@@ -273,60 +285,80 @@ if(tg){
     const botUsername = 'epidemyvirusbot';
     const refLink = `https://t.me/${botUsername}?startapp=ref_${currentUserId}`;
     document.getElementById('ref-link').value = refLink;
+  }
+}
 
-    // Firebase Sync & Referral Check
-    const userRef = db.ref('users/' + currentUserId);
-    userRef.once('value', (snapshot) => {
-      let data = snapshot.val();
-      if(!data) {
-        // New User Registration
-        let startParam = tg.initDataUnsafe?.start_param;
-        let initialBalance = 0;
+// Safe Firebase Realtime Sync with Dynamic Referral Increment
+try {
+  const firebaseConfig = {
+    databaseURL: "https://virus-mining-default-rtdb.firebaseio.com/"
+  };
+  if (window.firebase) {
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        if(startParam && startParam.startsWith('ref_')) {
-          let referrerId = startParam.replace('ref_', '');
-          if(referrerId !== currentUserId) {
-            initialBalance = 50; // Welcome Bonus
-            // Increment Referrer Count in Firebase
-            db.ref('users/' + referrerId + '/refCount').transaction((currentCount) => {
-              return (currentCount || 0) + 1;
-            });
+    if (currentUserId) {
+      const userRef = db.ref('users/' + currentUserId);
+      
+      userRef.once('value', (snapshot) => {
+        let data = snapshot.val();
+        
+        if (!data) {
+          // Identify if registered via referral parameter
+          let startParam = tg?.initDataUnsafe?.start_param;
+          let initialBalance = user.balance;
+
+          if (startParam && startParam.startsWith('ref_')) {
+            let referrerId = startParam.replace('ref_', '');
+            if (referrerId && referrerId !== currentUserId) {
+              initialBalance += 50; // Welcome Bonus for Referral
+
+              // Increment referrer's count dynamically in Firebase
+              db.ref('users/' + referrerId + '/refCount').transaction((c) => (c || 0) + 1);
+            }
           }
+
+          data = {
+            balance: initialBalance,
+            startAt: Date.now(),
+            refCount: 0,
+            spinsLeft: 5,
+            adsWatched: 0,
+            completedTasks: [],
+            lastTaskDateUTC: getTodayUTCDateString()
+          };
+          userRef.set(data);
         }
 
-        data = {
-          balance: initialBalance,
-          startAt: Date.now(),
-          refCount: 0,
-          spinsLeft: 5,
-          adsWatched: 0,
-          completedTasks: [],
-          lastTaskDateUTC: getTodayUTCDateString()
-        };
-        userRef.set(data);
-      }
+        user.refCount = data.refCount || user.refCount;
+        user.balance = Math.max(user.balance, data.balance || 0);
+        saveLocal();
+        render();
+      });
 
-      user = data;
-      saveLocal();
-      render();
-
-      // Listen for real-time updates (like refCount changes)
+      // Realtime Listener to reflect new referral counts instantly
       userRef.on('value', (snapshot) => {
-        let updatedData = snapshot.val();
-        if(updatedData) {
-          user.refCount = updatedData.refCount || 0;
-          user.balance = updatedData.balance || user.balance;
-          user.spinsLeft = updatedData.spinsLeft ?? user.spinsLeft;
-          user.adsWatched = updatedData.adsWatched ?? user.adsWatched;
+        let updated = snapshot.val();
+        if (updated) {
+          user.refCount = updated.refCount || 0;
           saveLocal();
           render();
         }
       });
-    });
+    }
   }
+} catch(err) {
+  console.log("Firebase bypass enabled:", err);
 }
 
-// TON CONNECT Setup
+// Clear Cache Button for Same-Device Testing
+function clearTestCache() {
+  localStorage.clear();
+  alert("✅ Local cache cleared! Now switch Telegram accounts and open your referral link.");
+  location.reload();
+}
+
+// TON Connect Setup
 try {
   const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
     manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
@@ -342,26 +374,6 @@ try {
       document.getElementById('prof-wallet').innerText = 'Wallet: Not Connected';
     }
   });
-} catch(e) {}
-
-const LOCAL_KEY = 'virus_mine_firebase_v1';
-function saveLocal() { 
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(user));
-  if(currentUserId) {
-    db.ref('users/' + currentUserId).update({
-      balance: user.balance,
-      startAt: user.startAt,
-      spinsLeft: user.spinsLeft,
-      adsWatched: user.adsWatched,
-      completedTasks: user.completedTasks,
-      lastTaskDateUTC: user.lastTaskDateUTC
-    });
-  }
-}
-
-try {
-  let saved = localStorage.getItem(LOCAL_KEY);
-  if(saved) user = { ...user, ...JSON.parse(saved) };
 } catch(e) {}
 
 function getMiningRate(refs) {
@@ -419,7 +431,7 @@ function render() {
   }
 }
 
-// CLAIM VIRUS Button Logic
+// CLAIM VIRUS Button
 document.getElementById('claim-btn').onclick = () => {
   let currentSpeed = getMiningRate(user.refCount);
   let elapsed = Math.min(Date.now() - user.startAt, DURATION);
@@ -437,7 +449,7 @@ document.getElementById('claim-btn').onclick = () => {
   alert('🎉 Successfully claimed your VIRUS tokens!');
 };
 
-// Spin Wheel Logic
+// Spin Wheel
 document.getElementById('spin-btn').onclick = () => {
   if (user.spinsLeft <= 0) {
     alert('No spins left! Watch ads to get extra spins.');
@@ -459,29 +471,4 @@ document.getElementById('spin-btn').onclick = () => {
     user.balance += reward;
     saveLocal(); 
     render();
-    alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
-  }, 3000);
-};
-
-// Adsgram Video Ads Integration
-document.getElementById('watch-ad-btn').onclick = async () => {
-  if (user.adsWatched >= 10) {
-    alert('Daily ad limit reached! (10/10)');
-    return;
-  }
-
-  if (window.Adsgram) {
-    try {
-      const adController = window.Adsgram.init({ blockId: "54024" });
-      await adController.show();
-      
-      user.adsWatched++;
-      user.spinsLeft++;
-      saveLocal(); 
-      render();
-      alert('✅ Ad completed! +1 Extra Spin added.');
-    } catch (err) {
-      console.error("Adsgram Error:", err);
-      alert('No ad available right now or ad was skipped.');
-    }
-  } else
+    alert(`🎉 Congratulations! You won ${reward} VIRUS t
