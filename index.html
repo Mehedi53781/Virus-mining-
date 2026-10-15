@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>VIRUS · Mine & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- Adsgram Official SDK -->
+<script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
 
 <style>
 :root {
@@ -61,13 +63,8 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 .wheel { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--accent); background: conic-gradient(#1e2f3f 0deg 72deg, #131f2b 72deg 144deg, #1e2f3f 144deg 216deg, #131f2b 216deg 288deg, #1e2f3f 288deg 360deg); display: flex; align-items: center; justify-content: center; transition: transform 3s cubic-bezier(0.15, 0.95, 0.35, 1); font-weight: bold; }
 .wheel-pointer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid #ff3d00; z-index: 10; }
 
-/* Ad Tasks List */
+/* Task List */
 .task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #0e1722; border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 10px; }
-
-/* Friends / Rate Breakdown */
-.rate-list { margin-top: 10px; }
-.rate-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
-.rate-row.active { color: var(--accent); font-weight: bold; }
 
 /* Bottom Navigation Bar */
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: var(--nav-bg); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
@@ -164,7 +161,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   <div class="card">
     <h3>🤝 Invite Friends</h3>
     <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Share your link and earn automatically!</p>
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
       <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Generating link...">
       <button class="btn-secondary" onclick="copyRefLink()">Copy</button>
     </div>
@@ -177,10 +174,6 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <div class="stat-card"><span>Current Speed</span><strong id="ref-speed-boost">10 VIRUS/hr</strong></div>
     </div>
   </div>
-
-  <div class="card" style="border:1px dashed var(--danger);">
-    <button class="btn-secondary" style="background:var(--danger); color:#fff; border:none; width:100%;" onclick="clearTestCache()">Clear Local Cache (Test Reset)</button>
-  </div>
 </div>
 
 <!-- TAB 5: PROFILE -->
@@ -191,8 +184,8 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
     <small style="color:var(--text-muted);">Account Active</small>
   </div>
   <div class="card">
-    <div class="rate-row"><span>Account Status</span><strong style="color:var(--accent);">Active / Clean</strong></div>
-    <div class="rate-row"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div>
+    <div class="rate-row" style="display:flex; justify-content:space-between; padding:8px 0;"><span>Account Status</span><strong style="color:var(--accent);">Active / Clean</strong></div>
+    <div class="rate-row" style="display:flex; justify-content:space-between; padding:8px 0;"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div>
   </div>
 </div>
 
@@ -217,7 +210,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
 <script>
 const DURATION = 6 * 3600000;
-let LOCAL_KEY = 'virus_mine_clean_v200';
+let LOCAL_KEY = 'virus_mine_clean_final_v600';
 
 let user = {
   balance: 0,
@@ -225,14 +218,32 @@ let user = {
   refCount: 0,
   spinsLeft: 5,
   adsWatched: 0,
-  completedTasks: []
+  completedTasks: [],
+  lastTaskDateUTC: ""
 };
+
+let currentUserId = "guest";
 
 function saveLocal() { 
   try { localStorage.setItem(LOCAL_KEY, JSON.stringify(user)); } catch(e){}
 }
 
-// Global Tab Switcher Function
+function getTodayUTCDateString() {
+  const now = new Date();
+  return now.getUTCFullYear() + '-' + (now.getUTCMonth() + 1) + '-' + now.getUTCDate();
+}
+
+function checkDailyReset() {
+  const todayUTC = getTodayUTCDateString();
+  if (user.lastTaskDateUTC !== todayUTC) {
+    user.completedTasks = [];
+    user.lastTaskDateUTC = todayUTC;
+    user.adsWatched = 0;
+    saveLocal();
+  }
+}
+
+// Tab Switcher
 function switchTab(tabId, el) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -241,7 +252,6 @@ function switchTab(tabId, el) {
 }
 
 // Telegram Setup
-let currentUserId = "guest";
 try {
   const tg = window.Telegram?.WebApp;
   if(tg) {
@@ -262,6 +272,20 @@ try {
 
       const botUsername = 'epidemyvirusbot';
       document.getElementById('ref-link').value = `https://t.me/${botUsername}?startapp=ref_${currentUserId}`;
+
+      let startParam = tg.initDataUnsafe?.start_param;
+      if (startParam && startParam.startsWith('ref_')) {
+        let referrerId = startParam.replace('ref_', '');
+        if (referrerId && referrerId !== currentUserId && !localStorage.getItem('ref_done_' + currentUserId)) {
+          user.balance += 50; 
+          localStorage.setItem('ref_done_' + currentUserId, 'true');
+          
+          let refKey = 'virus_refs_' + referrerId;
+          let oldRefs = parseInt(localStorage.getItem(refKey) || '0');
+          localStorage.setItem(refKey, oldRefs + 1);
+          saveLocal();
+        }
+      }
     }
   }
 } catch(e) {}
@@ -271,6 +295,15 @@ try {
   let saved = localStorage.getItem(LOCAL_KEY);
   if(saved) user = { ...user, ...JSON.parse(saved) };
 } catch(e) {}
+
+if (currentUserId !== 'guest') {
+  let myRefKey = 'virus_refs_' + currentUserId;
+  let storedRefs = parseInt(localStorage.getItem(myRefKey) || '0');
+  if (storedRefs > user.refCount) {
+    user.refCount = storedRefs;
+    saveLocal();
+  }
+}
 
 function getMiningRate(refs) {
   if (refs >= 50000) return 100;
@@ -288,6 +321,7 @@ function getMiningRate(refs) {
 }
 
 function render() {
+  checkDailyReset();
   let currentSpeed = getMiningRate(user.refCount);
   
   document.getElementById('mining-rate-text').textContent = currentSpeed + ' VIRUS/hr';
@@ -300,6 +334,7 @@ function render() {
   document.getElementById('balance').textContent = (user.balance + minedAmount).toFixed(6);
   document.getElementById('spins-left').textContent = user.spinsLeft;
   document.getElementById('ads-count').textContent = user.adsWatched + ' / 10';
+  document.getElementById('ads-bonus').textContent = '+' + user.adsWatched + ' Spins';
   document.getElementById('prof-ads').textContent = user.adsWatched + ' / 10';
 
   let remaining = DURATION - elapsed;
@@ -334,23 +369,43 @@ function spinWheel() {
   }
   user.spinsLeft--;
   
-  let reward = 2;
-  user.balance += reward;
-  saveLocal();
-  render();
-  alert(`🎉 You won ${reward} VIRUS tokens!`);
+  let deg = Math.floor(Math.random() * 360) + 1440;
+  document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
+
+  setTimeout(() => {
+    let reward = 2;
+    user.balance += reward;
+    saveLocal();
+    render();
+    alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
+  }, 3000);
 }
 
-function watchAd() {
+// Strict Adsgram Watch Ad Function (No Ad = No Spin)
+async function watchAd() {
   if(user.adsWatched >= 10) {
-    alert('Daily limit reached!');
+    alert('Daily limit reached (10/10)!');
     return;
   }
-  user.adsWatched++;
-  user.spinsLeft++;
-  saveLocal();
-  render();
-  alert('✅ +1 Extra Spin added!');
+
+  if (window.Adsgram) {
+    try {
+      const adController = window.Adsgram.init({ blockId: "54024" });
+      await adController.show();
+      
+      // Executed ONLY IF ad completes successfully
+      user.adsWatched++;
+      user.spinsLeft++;
+      saveLocal();
+      render();
+      alert('✅ Ad completed! +1 Extra Spin added.');
+    } catch(err) {
+      console.log("Ad show failed or skipped:", err);
+      alert('⚠️ Ad was not completed or unavailable. Spin was not added.');
+    }
+  } else {
+    alert('⚠️ Adsgram SDK is still loading or blocked by adblocker. Please refresh.');
+  }
 }
 
 function startTask(id, url, reward) {
@@ -371,15 +426,8 @@ function copyRefLink() {
   alert('Referral link copied!');
 }
 
-function clearTestCache() {
-  localStorage.clear();
-  alert('Cache Cleared!');
-  location.reload();
-}
-
 render();
 setInterval(render, 1000);
 </script>
 </body>
-                                                                                           </html>
-                                                        
+</html>
