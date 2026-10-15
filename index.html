@@ -1,274 +1,400 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>VIRUS Mining</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VIRUS · Mine & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
 <style>
-:root{--bg:#101720;--panel:#1d2936;--panel2:#202d3b;--text:#f5f7fa;--muted:#96a3b2;--green:#42c990;--blue:#398ff0}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-main{max-width:480px;margin:auto;padding:20px 16px 30px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
-.circle{width:42px;height:42px;border-radius:50%;background:#202a36;display:grid;place-items:center;color:#fff;font-size:22px}
-.brand{text-align:center}.brand h1{font-size:23px;margin:0}.brand small{color:var(--muted);font-size:15px}
-.coin{width:76px;height:76px;border-radius:50%;background:linear-gradient(145deg,#50a7ff,#176bd0);display:grid;place-items:center;font-size:36px;margin:0 0 18px;border:3px solid #7bc0ff}
-.price{font-size:32px;font-weight:800;margin-bottom:8px}.change{color:var(--green);font-size:16px}.change span{color:var(--muted);margin-left:8px}
-.chart{height:150px;margin:18px 0 8px;position:relative;border-bottom:1px solid #293541;overflow:hidden}
-.chart svg{width:100%;height:100%}.ranges{display:flex;justify-content:space-between;padding:8px 6px 18px;color:#d7dde4;font-weight:bold}
-.card{background:var(--panel);border-radius:22px;padding:18px;margin:14px 0}.receive{width:100%;border:0;background:var(--panel2);color:white;border-radius:20px;padding:18px;font-size:16px;font-weight:bold;cursor:pointer}
-h2{font-size:19px;margin:26px 0 14px}.about{background:var(--panel);border-radius:20px;padding:18px;line-height:1.5;color:#f0f3f7}
-.row{display:flex;justify-content:space-between;gap:10px;padding:16px 2px;border-bottom:1px solid #2a3745}.row:last-child{border:0}.row span{color:var(--muted)}.row strong{font-size:16px}
-.mine{display:flex;align-items:center;flex-direction:column;padding:12px 0 4px}.mine button{width:126px;height:126px;border-radius:50%;border:3px solid #63b8ff;background:radial-gradient(circle at 35% 25%,#438fe5,#1454a3);color:white;font-size:17px;font-weight:800;box-shadow:0 0 25px #398ff033;cursor:pointer}
-.muted{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}.primary{width:100%;padding:17px;border:0;border-radius:18px;background:var(--blue);color:white;font-size:17px;font-weight:bold;margin-top:10px;cursor:pointer}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#172330;padding:14px;border-radius:14px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:7px;color:#fff;font-size:18px}
+:root {
+  --bg: #0b1219;
+  --card-bg: #131f2b;
+  --card-border: #1e2f3f;
+  --accent: #00e676;
+  --accent-dark: #00b0ff;
+  --text: #ffffff;
+  --text-muted: #8fa3b8;
+  --nav-bg: #0d1722;
+}
 
-.task-item{display:flex;justify-content:space-between;align-items:center;background:#172330;padding:12px 14px;border-radius:14px;margin-bottom:10px}
-.task-item button{background:var(--green);border:0;color:#fff;padding:8px 14px;border-radius:10px;font-weight:bold;cursor:pointer}
-.task-item button:disabled{background:#555;cursor:not-allowed;font-size:11px}
-.ref-box{display:flex;gap:8px;margin-top:8px}
-.ref-input{flex:1;background:#172330;border:1px solid #2a3745;color:var(--text);padding:10px;border-radius:10px;font-size:13px}
-.ref-btn{background:var(--blue);border:0;color:#fff;padding:10px 16px;border-radius:10px;font-weight:bold;cursor:pointer}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow-x: hidden; }
 
-#ton-connect-btn{display:flex;justify-content:center;margin-top:10px}
-footer{text-align:center;color:#7f8d9c;font-size:11px;line-height:1.5;margin:20px 0}
-</style></head>
-<body><main>
-<div class="top"><div class="circle">‹</div><div class="brand"><h1>VIRUS 🦠🦠 Mining</h1><small>TON · Mining</small></div><div class="circle">⋯</div></div>
-<div class="coin">✳</div>
-<div class="price"><span id="balance">0.000000</span> VIRUS</div>
-<div class="change">● Mining status <span id="status">Inactive</span></div>
-<div class="chart"><svg viewBox="0 0 400 150" preserveAspectRatio="none" aria-label="Decorative sample chart"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#42c990" stop-opacity=".25"/><stop offset="1" stop-color="#42c990" stop-opacity="0"/></linearGradient></defs><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43 L400 150 L0 150Z" fill="url(#area)"/><path d="M0 128 L18 119 L30 127 L46 115 L60 120 L75 95 L89 106 L103 90 L118 103 L130 45 L143 76 L158 59 L173 67 L190 41 L206 56 L222 49 L237 70 L251 44 L267 61 L284 77 L300 69 L315 86 L331 72 L348 79 L365 55 L382 67 L400 43" fill="none" stroke="#42c990" stroke-width="2.5"/></svg></div>
-<div class="ranges"><span>H</span><span>D</span><span>W</span><span>M</span><span>6M</span><span>Y</span></div>
-<button class="receive" id="start">⛏️ &nbsp; Start Mining</button>
+/* Header Component */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: rgba(13,23,34,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--card-border); }
+.user-info { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #00e676, #00b0ff); display: grid; place-items: center; font-weight: bold; font-size: 18px; color: #000; }
+.user-meta h4 { font-size: 14px; font-weight: 700; }
+.user-meta small { color: var(--accent); font-size: 11px; }
 
-<h2>Mining Center</h2>
-<div class="card">
-  <div class="mine"><button id="tap">TAP<br>+1 VIRUS</button><div class="muted">Tap to collect points</div></div>
-  <div class="stats">
-    <div class="stat"><span>Mining rate</span><strong id="mining-rate-text">10 VIRUS/hr</strong></div>
-    <div class="stat"><span>Session timer</span><strong id="timer">06:00:00</strong></div>
-  </div>
-  <button class="primary" id="claim">Claim Points</button>
-</div>
+/* Main Views */
+.tab-content { display: none; padding: 16px; animation: fadeIn 0.25s ease-in-out; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-<h2>Daily Tasks (+10 VIRUS)</h2>
-<div class="card">
-  <div class="task-item">
-    <div><strong>Join Telegram Channel</strong><br><small style="color:var(--muted)">+10 VIRUS (Daily)</small></div>
-    <button id="task1">Join</button>
-  </div>
-  
-  <div class="task-item">
-    <div><strong>Join Community Group</strong><br><small style="color:var(--muted)">+10 VIRUS (Daily)</small></div>
-    <button id="task2">Join</button>
-  </div>
-</div>
+/* Cards & UI Blocks */
+.card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+.balance-display { text-align: center; padding: 20px 0; }
+.balance-val { font-size: 34px; font-weight: 900; letter-spacing: -0.5px; margin: 4px 0; color: #fff; }
+.balance-label { color: var(--text-muted); font-size: 13px; }
 
-<h2>Referral System</h2>
-<div class="card">
-  <div class="row"><span>Total Referrals</span><strong id="ref-count">0</strong></div>
-  <div style="margin-top:10px;">
-    <strong>Your Referral Link (+50 VIRUS/ref)</strong>
-    <div class="ref-box">
-      <input type="text" id="ref-link-input" class="ref-input" readonly value="Loading...">
-      <button class="ref-btn" id="copy-ref">Copy</button>
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.stat-card { background: #0e1722; border: 1px solid var(--card-border); padding: 14px; border-radius: 14px; }
+.stat-card span { color: var(--text-muted); font-size: 12px; display: block; }
+.stat-card strong { font-size: 16px; color: var(--accent); margin-top: 4px; display: block; }
+
+.btn-primary { width: 100%; padding: 16px; border-radius: 16px; border: none; background: var(--accent); color: #05180f; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 20px rgba(0,230,118,0.25); }
+.btn-primary:disabled { background: #263848; color: #607385; box-shadow: none; cursor: not-allowed; }
+.btn-secondary { background: #1a2a3a; color: #fff; border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+/* Mining Graphics Box */
+.miner-box { position: relative; width: 100%; height: 210px; background: radial-gradient(circle, rgba(0,230,118,0.12) 0%, rgba(11,18,25,0) 70%); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px 0; }
+.coin-icon { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #00e676, #008844); display: grid; place-items: center; font-size: 50px; box-shadow: 0 0 35px rgba(0,230,118,0.4); animation: pulse 2.5s infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+/* Lucky Spin Wheel UI */
+.wheel-container { position: relative; width: 220px; height: 220px; margin: 20px auto; }
+.wheel { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--accent); background: conic-gradient(#1e2f3f 0deg 72deg, #131f2b 72deg 144deg, #1e2f3f 144deg 216deg, #131f2b 216deg 288deg, #1e2f3f 288deg 360deg); display: flex; align-items: center; justify-content: center; transition: transform 3s cubic-bezier(0.15, 0.95, 0.35, 1); font-weight: bold; }
+.wheel-pointer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid #ff3d00; z-index: 10; }
+
+/* Ad Tasks List */
+.task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #0e1722; border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 10px; }
+
+/* Friends / Rate Breakdown */
+.rate-list { margin-top: 10px; }
+.rate-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+.rate-row.active { color: var(--accent); font-weight: bold; }
+
+/* Bottom Navigation Bar */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: var(--nav-bg); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+.nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; cursor: pointer; text-decoration: none; width: 20%; }
+.nav-item.active { color: var(--accent); }
+.nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; fill: currentColor; }
+
+/* Modal Popup Ad */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; place-items: center; padding: 20px; }
+.modal-content { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; text-align: center; max-width: 360px; width: 100%; position: relative; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="header">
+  <div class="user-info">
+    <div class="avatar" id="user-avatar">V</div>
+    <div class="user-meta">
+      <h4 id="user-name">Sheikh Mehedi</h4>
+      <small id="user-level">Level 1 Miner</small>
     </div>
   </div>
-  <div style="margin-top:14px; font-size:12px; color:var(--muted); line-height:1.4;">
-    💡 <i>+50 tokens per invite. Get <b>+100 bonus tokens</b> when your referral stays active for 7 days, connects wallet, and joins channel/group!</i>
-  </div>
-  <button class="primary" id="claim-ref-bonus" style="background:var(--panel2); border:1px solid var(--blue); margin-top:12px;">Check 7-Day Active Referral Bonus (+100)</button>
-</div>
-
-<h2>Wallet Connect</h2>
-<div class="card">
-  <div class="row"><span>Connect TON Wallet</span><strong id="wallet-status" style="color:var(--muted)">Not Connected</strong></div>
   <div id="ton-connect-btn"></div>
 </div>
 
-<h2>Overview</h2>
-<div class="card">
-  <div class="row"><span>Market Cap</span><strong>Not launched</strong></div>
-  <div class="row"><span>Total Supply</span><strong>Not announced</strong></div>
-  <div class="row"><span>TON token</span><strong>Future plan</strong></div>
+<!-- TAB 1: MINE -->
+<div id="tab-mine" class="tab-content active">
+  <div class="balance-display">
+    <small class="balance-label">Total Balance</small>
+    <div class="balance-val"><span id="balance">0.000000</span> VIRUS</div>
+    <small style="color:var(--accent);">● Mining Active</small>
+  </div>
+
+  <div class="miner-box">
+    <div class="coin-icon">🦠</div>
+    <p style="margin-top:12px; font-weight:bold; color:var(--text-muted);">VIRUS RIG v1.0</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span>Mining Speed</span><strong id="mining-rate-text">10 VIRUS/hr</strong></div>
+    <div class="stat-card"><span>Session Timer</span><strong id="timer">06:00:00</strong></div>
+  </div>
+
+  <button class="btn-primary" id="claim-btn">CLAIM VIRUS</button>
 </div>
-<footer>Unofficial concept prototype. VIRUS points are stored locally, have no cash value, and are not a TON token.</footer>
-</main>
+
+<!-- TAB 2: SPIN & ADS -->
+<div id="tab-spin" class="tab-content">
+  <div class="card">
+    <h3>🎡 Daily Lucky Spin</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Available Spins: <b id="spins-left" style="color:var(--accent);">5</b></p>
+    
+    <div class="wheel-container">
+      <div class="wheel-pointer"></div>
+      <div class="wheel" id="wheel">SPIN ME</div>
+    </div>
+
+    <button class="btn-primary" id="spin-btn">SPIN NOW</button>
+  </div>
+
+  <div class="card">
+    <h3>📺 Watch Ads & Get Extra Spins</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Watch ads to gain extra spins. (Limit: 10/day)</p>
+    <div class="stats-grid">
+      <div class="stat-card"><span>Ads Watched</span><strong id="ads-count">0 / 10</strong></div>
+      <div class="stat-card"><span>Bonus Earned</span><strong id="ads-bonus">+0 Spins</strong></div>
+    </div>
+    <button class="btn-primary" id="watch-ad-btn" style="background:#00b0ff;">WATCH AD (+1 SPIN)</button>
+  </div>
+</div>
+
+<!-- TAB 3: TASKS -->
+<div id="tab-tasks" class="tab-content">
+  <div class="card">
+    <h3>📋 Daily Tasks</h3>
+    <div style="margin-top:12px;">
+      <div class="task-item">
+        <div><strong>Join Telegram Channel</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div>
+        <button class="btn-secondary" onclick="window.open('https://t.me/virusmining')">Join</button>
+      </div>
+      <div class="task-item">
+        <div><strong>Join Community Group</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div>
+        <button class="btn-secondary" onclick="window.open('https://t.me/virusminingbot')">Join</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: FRIENDS (REFERRALS) -->
+<div id="tab-friends" class="tab-content">
+  <div class="card">
+    <h3>🤝 Invite Friends</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Get +50 VIRUS & 🎁 <b>5% Commission</b> from active referrals' mining rewards!</p>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Loading...">
+      <button class="btn-secondary" id="copy-ref">Copy</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💰 Referral Commission Stats</h3>
+    <div class="stats-grid">
+      <div class="stat-card"><span>Active Referrals</span><strong id="ref-active-count">0 Active</strong></div>
+      <div class="stat-card"><span>5% Mining Commission</span><strong id="ref-commission">0.0000 VIRUS</strong></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🚀 Dynamic Rate Levels</h3>
+    <div class="rate-list">
+      <div class="rate-row" id="r-10"><span>10 Referrals</span><strong>15 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-25"><span>25 Referrals</span><strong>20 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-50"><span>50 Referrals</span><strong>25 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-100"><span>100 Referrals</span><strong>30 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-250"><span>250 Referrals</span><strong>35 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-500"><span>500 Referrals</span><strong>40 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-1000"><span>1,000 Referrals</span><strong>50 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-2500"><span>2,500 Referrals</span><strong>65 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-5000"><span>5,000 Referrals</span><strong>75 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-10000"><span>10,000 Referrals</span><strong>85 VIRUS/hr</strong></div>
+      <div class="rate-row" id="r-50000"><span>50,000 Referrals</span><strong>100 VIRUS/hr</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: PROFILE -->
+<div id="tab-profile" class="tab-content">
+  <div class="card" style="text-align:center;">
+    <div class="avatar" style="width:60px; height:60px; font-size:26px; margin:0 auto 10px;">V</div>
+    <h3 id="prof-name">Sheikh Mehedi</h3>
+    <small style="color:var(--text-muted);" id="prof-wallet">Wallet: Not Connected</small>
+  </div>
+  <div class="card">
+    <div class="rate-row"><span>Total Spins Earned</span><strong id="total-spins">0</strong></div>
+    <div class="rate-row"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div>
+    <div class="rate-row"><span>5% Referral Earnings</span><strong id="prof-commission">0.0000 VIRUS</strong></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAVIGATION BAR -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('mine', this)">
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>
+    Mine
+  </div>
+  <div class="nav-item" onclick="switchTab('spin', this)">
+    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    Spin & Ads
+  </div>
+  <div class="nav-item" onclick="switchTab('tasks', this)">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    Tasks
+  </div>
+  <div class="nav-item" onclick="switchTab('friends', this)">
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Friends
+  </div>
+  <div class="nav-item" onclick="switchTab('profile', this)">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    Profile
+  </div>
+</div>
+
+<!-- AUTO OPEN SPONSORED AD POPUP -->
+<div class="modal" id="ad-modal">
+  <div class="modal-content">
+    <h3 style="color:var(--accent);">📢 Sponsored Ad</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin:12px 0;">Welcome to VIRUS Mining Network! Join our official channel for latest updates and giveaways.</p>
+    <button class="btn-primary" onclick="closeAdModal()">Continue to Mining</button>
+  </div>
+</div>
 
 <script>
-const tg=window.Telegram?.WebApp;if(tg){tg.ready();tg.expand()}
-const $=id=>document.getElementById(id),KEY='virusmine_v_final',DURATION=6*3600000,DAY_MS=24*3600000;
+const tg = window.Telegram?.WebApp;
+if(tg){ tg.ready(); tg.expand(); }
 
-let d={
-    balance: 0,
-    running: false,
-    startAt: 0,
-    taps: 0,
-    refCount: 0,
-    wallet: null,
-    tasks: {t1_last:0, t2_last:0},
-    active7DaysRefs: 0,
-    claimed7DaysRefs: 0
+const KEY = 'virus_mine_v10';
+const DURATION = 6 * 3600000;
+
+let user = {
+  balance: 0,
+  startAt: Date.now(),
+  refCount: 0,
+  spinsLeft: 5,
+  adsWatched: 0,
+  wallet: null,
+  refCommissionEarned: 0
 };
 
-try{
-    let saved = localStorage.getItem(KEY);
-    if(saved) {
-        d={...d,...JSON.parse(saved)};
-    }
-}catch(e){}
+try {
+  let saved = localStorage.getItem(KEY);
+  if(saved) user = { ...user, ...JSON.parse(saved) };
+} catch(e) {}
 
+// Calculate Mining Rate from Referrals
 function getMiningRate() {
-    let r = d.refCount || 0;
-    if (r >= 50000) return 100;
-    if (r >= 10000) return 85;
-    if (r >= 5000) return 75;
-    if (r >= 2500) return 65;
-    if (r >= 1000) return 50;
-    if (r >= 500) return 40;
-    if (r >= 250) return 35;
-    if (r >= 100) return 30;
-    if (r >= 50) return 25;
-    if (r >= 25) return 20;
-    if (r >= 10) return 15;
-    return 10;
+  let r = user.refCount || 0;
+  if (r >= 50000) return 100;
+  if (r >= 10000) return 85;
+  if (r >= 5000) return 75;
+  if (r >= 2500) return 65;
+  if (r >= 1000) return 50;
+  if (r >= 500) return 40;
+  if (r >= 250) return 35;
+  if (r >= 100) return 30;
+  if (r >= 50) return 25;
+  if (r >= 25) return 20;
+  if (r >= 10) return 15;
+  return 10;
 }
 
-// TON Connect UI with Vercel Manifest URL
+// TON Connect Integration
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
-    buttonRootId: 'ton-connect-btn'
+  manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
+  buttonRootId: 'ton-connect-btn'
 });
 
-tonConnectUI.onStatusChange(wallet => {
-    if (wallet) {
-        d.wallet = wallet.account.address;
-        $('wallet-status').textContent = d.wallet.slice(0, 4) + '...' + d.wallet.slice(-4);
-        $('wallet-status').style.color = 'var(--green)';
-    } else {
-        d.wallet = null;
-        $('wallet-status').textContent = 'Not Connected';
-        $('wallet-status').style.color = 'var(--muted)';
-    }
-    save();
+tonConnectUI.onStatusChange(w => {
+  if (w) {
+    user.wallet = w.account.address;
+    document.getElementById('prof-wallet').textContent = 'Wallet: ' + user.wallet.slice(0, 4) + '...' + user.wallet.slice(-4);
+  }
+  save();
 });
 
-function earned(){
-    let rate = getMiningRate();
-    return d.running ? Math.min(Date.now() - d.startAt, DURATION) / 3600000 * rate : 0;
+function save() { localStorage.setItem(KEY, JSON.stringify(user)); }
+
+function render() {
+  let rate = getMiningRate();
+  let elapsed = Math.min(Date.now() - user.startAt, DURATION);
+  let earned = (elapsed / 3600000) * rate;
+  
+  document.getElementById('balance').textContent = (user.balance + earned).toFixed(6);
+  document.getElementById('mining-rate-text').textContent = rate + ' VIRUS/hr';
+  document.getElementById('spins-left').textContent = user.spinsLeft;
+  document.getElementById('ads-count').textContent = user.adsWatched + ' / 10';
+  document.getElementById('prof-ads').textContent = user.adsWatched + ' / 10';
+  document.getElementById('ref-active-count').textContent = user.refCount + ' Active';
+  document.getElementById('ref-commission').textContent = (user.refCommissionEarned || 0).toFixed(4) + ' VIRUS';
+  document.getElementById('prof-commission').textContent = (user.refCommissionEarned || 0).toFixed(4) + ' VIRUS';
+
+  let remaining = DURATION - elapsed;
+  let s = Math.max(0, Math.floor(remaining / 1000));
+  let h = String(Math.floor(s / 3600)).padStart(2, '0');
+  let m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  let sec = String(s % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `${h}:${m}:${sec}`;
 }
 
-function time(ms){
-    let s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),q=s%60;
-    return [h,m,q].map(x=>String(x).padStart(2,'0')).join(':');
+// Tab Switcher
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  el.classList.add('active');
 }
 
-function save(){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+// Claim Mining Points & Calculate 5% Commission
+document.getElementById('claim-btn').onclick = () => {
+  let rate = getMiningRate();
+  let elapsed = Math.min(Date.now() - user.startAt, DURATION);
+  let minedAmount = (elapsed / 3600000) * rate;
+  
+  user.balance += minedAmount;
+  
+  // 5% Referral Commission Simulation
+  if (user.refCount > 0) {
+    let comm = minedAmount * 0.05;
+    user.refCommissionEarned = (user.refCommissionEarned || 0) + comm;
+  }
 
-function render(){
-    let currentRate = getMiningRate();
-    if(d.running && Date.now()-d.startAt >= DURATION){
-        d.balance += DURATION/3600000 * currentRate;
-        d.running = false;
-        d.startAt = 0;
-        save();
-    }
-    $('balance').textContent = (d.balance + earned()).toFixed(6);
-    $('status').textContent = d.running ? 'Active' : 'Inactive';
-    $('timer').textContent = time(d.running ? DURATION - (Date.now() - d.startAt) : DURATION);
-    $('start').innerHTML = d.running ? '⏸ &nbsp; Stop Mining' : '⛏️ &nbsp; Start Mining';
-    $('mining-rate-text').textContent = currentRate + ' VIRUS/hr';
-    $('ref-count').textContent = d.refCount || 0;
-    
-    let t1_diff = Date.now() - (d.tasks.t1_last || 0);
-    if(t1_diff < DAY_MS){
-        $('task1').disabled = true;
-        $('task1').textContent = time(DAY_MS - t1_diff);
-    } else {
-        $('task1').disabled = false;
-        $('task1').textContent = 'Join';
-    }
+  user.startAt = Date.now();
+  save(); render();
+  alert('VIRUS tokens claimed successfully!');
+};
 
-    let t2_diff = Date.now() - (d.tasks.t2_last || 0);
-    if(t2_diff < DAY_MS){
-        $('task2').disabled = true;
-        $('task2').textContent = time(DAY_MS - t2_diff);
-    } else {
-        $('task2').disabled = false;
-        $('task2').textContent = 'Join';
-    }
+// Lucky Spin Action
+const spinRewards = [50, 10, 5, 2, 1];
+document.getElementById('spin-btn').onclick = () => {
+  if (user.spinsLeft <= 0) {
+    alert('No spins left! Watch ads or invite friends to get more spins.');
+    return;
+  }
+  user.spinsLeft--;
+  let reward = spinRewards[Math.floor(Math.random() * spinRewards.length)];
+  let deg = Math.floor(Math.random() * 360) + 1440;
+  document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
+  
+  setTimeout(() => {
+    user.balance += reward;
+    save(); render();
+    alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
+  }, 3000);
+};
+
+// Watch Ad Action
+document.getElementById('watch-ad-btn').onclick = () => {
+  if (user.adsWatched >= 10) {
+    alert('Daily Watch Ads Limit (10/10) reached! Come back tomorrow.');
+    return;
+  }
+  alert('▶️ Playing Sponsored Video Ad... (Simulated)');
+  setTimeout(() => {
+    user.adsWatched++;
+    user.spinsLeft++;
+    save(); render();
+    alert('✅ Ad completed! +1 Extra Spin added.');
+  }, 2000);
+};
+
+// Auto Open Ad Popup on Start
+setTimeout(() => {
+  document.getElementById('ad-modal').style.display = 'grid';
+}, 1000);
+
+function closeAdModal() {
+  document.getElementById('ad-modal').style.display = 'none';
 }
 
-let userId = tg?.initDataUnsafe?.user?.id || '123456';
-let myRefLink = "https://t.me/epidemyvirusbot/virusmining?start=ref_" + userId;
-$('ref-link-input').value = myRefLink;
-
-$('copy-ref').onclick = () => {
-    navigator.clipboard.writeText(myRefLink);
-    alert('Referral link copied! Share with friends to get +50 VIRUS per invite.');
+// Ref Link Setup
+let uid = tg?.initDataUnsafe?.user?.id || '123456';
+document.getElementById('ref-link').value = "https://t.me/epidemyvirusbot/virusmining?start=ref_" + uid;
+document.getElementById('copy-ref').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('ref-link').value);
+  alert('Referral link copied!');
 };
 
-$('start').addEventListener('click', function () {
-    if (!d.running) {
-        d.running = true;
-        d.startAt = Date.now();
-    } else {
-        d.balance += earned();
-        d.running = false;
-        d.startAt = 0;
-    }
-    save();
-    render();
-});
-
-$('tap').onclick=()=>{d.balance+=1;d.taps++;save();render()};
-
-$('claim').onclick=()=>{
-    if(d.running){
-        let gained = earned();
-        d.balance += gained;
-        d.running = false;
-        d.startAt = 0;
-        save();
-        render();
-        alert('Points Claimed Successfully! Total: ' + gained.toFixed(6) + ' VIRUS');
-    } else {
-        alert('Mining session is currently inactive. Start mining to earn points.');
-    }
-};
-
-$('task1').onclick=()=>{
-    window.open('https://t.me/virusmining', '_blank');
-    d.tasks.t1_last = Date.now();
-    d.balance += 10;
-    save();
-    render();
-    alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
-};
-
-$('task2').onclick=()=>{
-    window.open('https://t.me/virusminingbot', '_blank');
-    d.tasks.t2_last = Date.now();
-    d.balance += 10;
-    save();
-    render();
-    alert('Task Completed! You earned +10 VIRUS. Come back in 24 hours for daily reward.');
-};
-
-$('claim-ref-bonus').onclick=()=>{
-    let unclaimed = (d.active7DaysRefs || 0) - (d.claimed7DaysRefs || 0);
-    if(unclaimed > 0){
-        let reward = unclaimed * 100;
-        d.balance += reward;
-        d.claimed7DaysRefs = (d.claimed7DaysRefs || 0) + unclaimed;
-        save();
-        render();
-        alert('Congratulations! You claimed ' + reward + ' VIRUS bonus for ' + unclaimed + ' active 7-day referrals!');
-    } else {
-        alert('No new eligible 7-day active referrals found yet. Ensure your referrals connect wallet, join tasks, and remain active for 7 days!');
-    }
-};
-
-render();setInterval(render,1000);
-</script></body></html>
+render(); setInterval(render, 1000);
+</script>
+</body>
+                                                     </html>
