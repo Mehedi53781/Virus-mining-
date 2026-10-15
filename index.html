@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>VIRUS · Mine & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-<!-- Adsgram Official SDK -->
-<script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
 
 <style>
 :root {
@@ -90,7 +87,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <small id="user-level">Level 1 Miner</small>
     </div>
   </div>
-  <div id="ton-connect-btn"></div>
+  <button class="btn-secondary" style="font-size:11px; padding:6px 10px;">Connected</button>
 </div>
 
 <!-- TAB 1: MINE -->
@@ -111,7 +108,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
     <div class="stat-card"><span>Session Timer</span><strong id="timer">06:00:00</strong></div>
   </div>
 
-  <button class="btn-primary" id="claim-btn">CLAIM VIRUS</button>
+  <button class="btn-primary" id="claim-btn" onclick="claimMining()">CLAIM VIRUS</button>
 </div>
 
 <!-- TAB 2: SPIN & ADS -->
@@ -125,7 +122,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <div class="wheel" id="wheel">SPIN ME</div>
     </div>
 
-    <button class="btn-primary" id="spin-btn">SPIN NOW</button>
+    <button class="btn-primary" id="spin-btn" onclick="spinWheel()">SPIN NOW</button>
   </div>
 
   <div class="card">
@@ -135,7 +132,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
       <div class="stat-card"><span>Ads Watched</span><strong id="ads-count">0 / 10</strong></div>
       <div class="stat-card"><span>Bonus Earned</span><strong id="ads-bonus">+0 Spins</strong></div>
     </div>
-    <button class="btn-primary" id="watch-ad-btn" style="background:#00b0ff;">WATCH AD (+1 SPIN)</button>
+    <button class="btn-primary" style="background:#00b0ff;" onclick="watchAd()">WATCH AD (+1 SPIN)</button>
   </div>
 </div>
 
@@ -169,7 +166,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
     <p style="font-size:12px; color:var(--text-muted); margin:6px 0 12px;">Share your link and earn automatically!</p>
     <div style="display:flex; gap:8px;">
       <input type="text" id="ref-link" style="flex:1; background:#0e1722; border:1px solid var(--card-border); color:#fff; padding:12px; border-radius:12px; font-size:12px;" readonly value="Generating link...">
-      <button class="btn-secondary" id="copy-ref" onclick="copyRefLink()">Copy</button>
+      <button class="btn-secondary" onclick="copyRefLink()">Copy</button>
     </div>
   </div>
 
@@ -181,11 +178,8 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
     </div>
   </div>
 
-  <!-- TEST TOOL: Reset Local Storage for Testing -->
   <div class="card" style="border:1px dashed var(--danger);">
-    <h4 style="color:var(--danger); font-size:13px; margin-bottom:6px;">🧪 Referral Test Helper</h4>
-    <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">অন্য অ্যাকাউন্ট দিয়ে টেস্ট করার পূর্বে লোকাল ডাটা রিসেট করতে নিচের বাটনে টিপুন:</p>
-    <button class="btn-secondary" style="background:var(--danger); color:#fff; border:none; width:100%;" onclick="clearTestCache()">Clear Cache for New Account Test</button>
+    <button class="btn-secondary" style="background:var(--danger); color:#fff; border:none; width:100%;" onclick="clearTestCache()">Clear Local Cache (Test Reset)</button>
   </div>
 </div>
 
@@ -194,10 +188,10 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
   <div class="card" style="text-align:center;">
     <div class="avatar" style="width:60px; height:60px; font-size:26px; margin:0 auto 10px;" id="prof-avatar">V</div>
     <h3 id="prof-name">User</h3>
-    <small style="color:var(--text-muted);" id="prof-wallet">Wallet: Not Connected</small>
+    <small style="color:var(--text-muted);">Account Active</small>
   </div>
   <div class="card">
-    <div class="rate-row"><span>Account Status</span><strong id="acc-status" style="color:var(--accent);">Active / Clean</strong></div>
+    <div class="rate-row"><span>Account Status</span><strong style="color:var(--accent);">Active / Clean</strong></div>
     <div class="rate-row"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div>
   </div>
 </div>
@@ -223,7 +217,7 @@ body { background: var(--bg); color: var(--text); padding-bottom: 75px; overflow
 
 <script>
 const DURATION = 6 * 3600000;
-let LOCAL_KEY = 'virus_mine_stable_v100';
+let LOCAL_KEY = 'virus_mine_clean_v200';
 
 let user = {
   balance: 0,
@@ -231,115 +225,52 @@ let user = {
   refCount: 0,
   spinsLeft: 5,
   adsWatched: 0,
-  completedTasks: [],
-  lastTaskDateUTC: ""
+  completedTasks: []
 };
-
-let currentUserId = "guest";
 
 function saveLocal() { 
   try { localStorage.setItem(LOCAL_KEY, JSON.stringify(user)); } catch(e){}
 }
 
-function getTodayUTCDateString() {
-  const now = new Date();
-  return now.getUTCFullYear() + '-' + (now.getUTCMonth() + 1) + '-' + now.getUTCDate();
+// Global Tab Switcher Function
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  if(el) el.classList.add('active');
 }
 
-function checkDailyReset() {
-  const todayUTC = getTodayUTCDateString();
-  if (user.lastTaskDateUTC !== todayUTC) {
-    user.completedTasks = [];
-    user.lastTaskDateUTC = todayUTC;
-    user.adsWatched = 0;
-    saveLocal();
+// Telegram Setup
+let currentUserId = "guest";
+try {
+  const tg = window.Telegram?.WebApp;
+  if(tg) {
+    tg.ready();
+    tg.expand();
+    const tgUser = tg.initDataUnsafe?.user;
+    if(tgUser) {
+      currentUserId = String(tgUser.id);
+      LOCAL_KEY = 'virus_user_' + currentUserId;
+      
+      const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User';
+      document.getElementById('user-name').innerText = fullName;
+      document.getElementById('prof-name').innerText = fullName;
+      
+      const firstChar = fullName.charAt(0).toUpperCase() || 'V';
+      document.getElementById('user-avatar').innerText = firstChar;
+      document.getElementById('prof-avatar').innerText = firstChar;
+
+      const botUsername = 'epidemyvirusbot';
+      document.getElementById('ref-link').value = `https://t.me/${botUsername}?startapp=ref_${currentUserId}`;
+    }
   }
-}
+} catch(e) {}
 
-// Initialize WebApp Data
-const tg = window.Telegram?.WebApp;
-if(tg){ 
-  try {
-    tg.ready(); 
-    tg.expand(); 
-  } catch(e){}
-
-  const tgUser = tg.initDataUnsafe?.user;
-  if(tgUser) {
-    currentUserId = String(tgUser.id);
-    LOCAL_KEY = 'virus_mine_' + currentUserId;
-    
-    const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User';
-    document.getElementById('user-name').innerText = fullName;
-    document.getElementById('prof-name').innerText = fullName;
-    
-    const firstChar = fullName.charAt(0).toUpperCase() || 'V';
-    document.getElementById('user-avatar').innerText = firstChar;
-    document.getElementById('prof-avatar').innerText = firstChar;
-
-    const botUsername = 'epidemyvirusbot';
-    const refLink = `https://t.me/${botUsername}?startapp=ref_${currentUserId}`;
-    document.getElementById('ref-link').value = refLink;
-  }
-}
-
-// Load User Saved Local State
+// Load User Data
 try {
   let saved = localStorage.getItem(LOCAL_KEY);
   if(saved) user = { ...user, ...JSON.parse(saved) };
 } catch(e) {}
-
-// Referral Tracking Logic
-if (tg) {
-  let startParam = tg.initDataUnsafe?.start_param;
-  if (startParam && startParam.startsWith('ref_')) {
-    let referrerId = startParam.replace('ref_', '');
-    if (referrerId && referrerId !== currentUserId && !localStorage.getItem('ref_processed_' + currentUserId)) {
-      user.balance += 50; // Welcome Bonus
-      localStorage.setItem('ref_processed_' + currentUserId, 'true');
-      
-      // Save Referral Boost for Referrer
-      let refKey = 'virus_ref_count_' + referrerId;
-      let existingRefs = parseInt(localStorage.getItem(refKey) || '0');
-      localStorage.setItem(refKey, existingRefs + 1);
-      saveLocal();
-    }
-  }
-}
-
-// Sync referral count for referrer
-if (currentUserId !== 'guest') {
-  let myRefKey = 'virus_ref_count_' + currentUserId;
-  let storedRefCount = parseInt(localStorage.getItem(myRefKey) || '0');
-  if (storedRefCount > user.refCount) {
-    user.refCount = storedRefCount;
-    saveLocal();
-  }
-}
-
-// TON Connect Setup
-try {
-  const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://virus-mining.vercel.app/tonconnect-manifest.json',
-    buttonRootId: 'ton-connect-btn'
-  });
-
-  tonConnectUI.onStatusChange(wallet => {
-    if (wallet) {
-      const address = wallet.account.address;
-      const shortAddr = address.substring(0, 4) + '...' + address.substring(address.length - 4);
-      document.getElementById('prof-wallet').innerText = 'Wallet: ' + shortAddr;
-    } else {
-      document.getElementById('prof-wallet').innerText = 'Wallet: Not Connected';
-    }
-  });
-} catch(e) {}
-
-function clearTestCache() {
-  localStorage.clear();
-  alert("✅ Cache cleared! Switch Telegram account and open referral link.");
-  location.reload();
-}
 
 function getMiningRate(refs) {
   if (refs >= 50000) return 100;
@@ -357,7 +288,6 @@ function getMiningRate(refs) {
 }
 
 function render() {
-  checkDailyReset();
   let currentSpeed = getMiningRate(user.refCount);
   
   document.getElementById('mining-rate-text').textContent = currentSpeed + ' VIRUS/hr';
@@ -378,26 +308,9 @@ function render() {
   let m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
   let sec = String(s % 60).padStart(2, '0');
   document.getElementById('timer').textContent = `${h}:${m}:${sec}`;
-  
-  const task1Btn = document.getElementById('task1-btn');
-  if(user.completedTasks.includes(1)){
-    task1Btn.innerText = "Done";
-    task1Btn.disabled = true;
-  } else if (!task1Btn.disabled) {
-    task1Btn.innerText = "Join";
-  }
-
-  const task2Btn = document.getElementById('task2-btn');
-  if(user.completedTasks.includes(2)){
-    task2Btn.innerText = "Done";
-    task2Btn.disabled = true;
-  } else if (!task2Btn.disabled) {
-    task2Btn.innerText = "Join";
-  }
 }
 
-// CLAIM VIRUS Button
-document.getElementById('claim-btn').onclick = () => {
+function claimMining() {
   let currentSpeed = getMiningRate(user.refCount);
   let elapsed = Math.min(Date.now() - user.startAt, DURATION);
   let minedAmount = (elapsed / 3600000) * currentSpeed;
@@ -412,72 +325,61 @@ document.getElementById('claim-btn').onclick = () => {
   saveLocal();
   render();
   alert('🎉 Successfully claimed your VIRUS tokens!');
-};
+}
 
-// Spin Wheel
-document.getElementById('spin-btn').onclick = () => {
+function spinWheel() {
   if (user.spinsLeft <= 0) {
-    alert('No spins left! Watch ads to get extra spins.');
+    alert('No spins left!');
     return;
   }
   user.spinsLeft--;
-
-  const rand = Math.random() * 100;
-  let reward = 1;
-  if (rand < 5) reward = 10;
-  else if (rand < 25) reward = 5;
-  else if (rand < 60) reward = 2;
-  else reward = 1;
-
-  let deg = Math.floor(Math.random() * 360) + 1440;
-  document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
   
-  setTimeout(() => {
-    user.balance += reward;
-    saveLocal(); 
-    render();
-    alert(`🎉 Congratulations! You won ${reward} VIRUS tokens!`);
-  }, 3000);
-};
+  let reward = 2;
+  user.balance += reward;
+  saveLocal();
+  render();
+  alert(`🎉 You won ${reward} VIRUS tokens!`);
+}
 
-// Adsgram Video Ads Integration
-document.getElementById('watch-ad-btn').onclick = async () => {
-  if (user.adsWatched >= 10) {
-    alert('Daily ad limit reached! (10/10)');
+function watchAd() {
+  if(user.adsWatched >= 10) {
+    alert('Daily limit reached!');
     return;
   }
+  user.adsWatched++;
+  user.spinsLeft++;
+  saveLocal();
+  render();
+  alert('✅ +1 Extra Spin added!');
+}
 
-  if (window.Adsgram) {
-    try {
-      const adController = window.Adsgram.init({ blockId: "54024" });
-      await adController.show();
-      
-      user.adsWatched++;
-      user.spinsLeft++;
-      saveLocal(); 
-      render();
-      alert('✅ Ad completed! +1 Extra Spin added.');
-    } catch (err) {
-      console.error("Adsgram Error:", err);
-      alert('No ad available right now or ad was skipped.');
-    }
-  } else {
-    alert('Adsgram SDK is still loading. Please check your network.');
-  }
-};
+function startTask(id, url, reward) {
+  window.open(url, '_blank');
+  setTimeout(() => {
+    user.balance += reward;
+    user.completedTasks.push(id);
+    saveLocal();
+    render();
+    alert(`🎉 Earned +${reward} VIRUS!`);
+  }, 3000);
+}
 
-// Task System
-function startTask(taskId, link, reward) {
-  window.open(link, '_blank');
-  let btn = document.getElementById(`task${taskId}-btn`);
-  let timeLeft = 15;
-  btn.disabled = true;
+function copyRefLink() {
+  let refInput = document.getElementById('ref-link');
+  refInput.select();
+  document.execCommand('copy');
+  alert('Referral link copied!');
+}
 
-  let timer = setInterval(() => {
-    btn.innerText = `${timeLeft}s`;
-    timeLeft--;
-    if (timeLeft < 0) {
-      clearInterval(timer);
-      btn.innerText = "Claim";
-      btn.disabled = false;
-      btn.onclick 
+function clearTestCache() {
+  localStorage.clear();
+  alert('Cache Cleared!');
+  location.reload();
+}
+
+render();
+setInterval(render, 1000);
+</script>
+</body>
+                                                                                           </html>
+                                                        
