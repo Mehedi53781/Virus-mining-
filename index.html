@@ -256,10 +256,46 @@ async function copyRefLink() {
 }
 function initTelegram() {
   const tg = window.Telegram?.WebApp;
+
   if (!tg) {
     setConnection(false, "Open in Telegram");
-    setNotice("mine-notice", "This app must be opened from Telegram for account verification.");
+    setNotice(
+      "mine-notice",
+      "Telegram account verification is unavailable in browser mode."
+    );
+    render();
     return;
   }
+
   tg.ready();
-  tg.expand(
+  tg.expand();
+
+  telegramInitData = tg.initData || "";
+  telegramUser = tg.initDataUnsafe?.user || null;
+
+  if (telegramUser) {
+    currentUserId = String(telegramUser.id);
+    const name =
+      [telegramUser.first_name, telegramUser.last_name]
+        .filter(Boolean)
+        .join(" ") || "Miner";
+
+    document.getElementById("user-name").textContent = name;
+    document.getElementById("prof-name").textContent = name;
+
+    const initial = name.charAt(0).toUpperCase();
+    document.getElementById("user-avatar").textContent = initial;
+    document.getElementById("prof-avatar").textContent = initial;
+  }
+
+  render();
+  loadProfile();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initTelegram();
+
+  // Update the mining session timer.
+  setInterval(render, 1000);
+});
+  
