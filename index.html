@@ -1,1 +1,265 @@
-index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VIRUS · Mine & Earn</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://adsgram.ai/js/adsgram-ad-sdk.js"></script>
+<style>
+:root{--bg:#0b1219;--card-bg:#131f2b;--card-border:#1e2f3f;--accent:#00e676;--accent-dark:#00b0ff;--text:#fff;--text-muted:#8fa3b8;--nav-bg:#0d1722;--danger:#ff5252}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;user-select:none}
+body{background:var(--bg);color:var(--text);padding-bottom:75px;overflow-x:hidden}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(13,23,34,.8);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;border-bottom:1px solid var(--card-border)}
+.user-info{display:flex;align-items:center;gap:10px}.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00e676,#00b0ff);display:grid;place-items:center;font-weight:bold;font-size:18px;color:#000}.user-meta h4{font-size:14px;font-weight:700}.user-meta small{color:var(--accent);font-size:11px}
+.tab-content{display:none;padding:16px;animation:fadeIn .25s ease-in-out}.tab-content.active{display:block}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:18px;margin-bottom:14px}.warning-card{background:rgba(255,82,82,.1);border:1px solid var(--danger);border-radius:16px;padding:14px;margin-bottom:14px;color:var(--danger);font-size:12px;line-height:1.5;text-align:center}
+.balance-display{text-align:center;padding:20px 0}.balance-val{font-size:34px;font-weight:900;letter-spacing:-.5px;margin:4px 0;color:#fff}.balance-label{color:var(--text-muted);font-size:13px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.stat-card{background:#0e1722;border:1px solid var(--card-border);padding:14px;border-radius:14px}.stat-card span{color:var(--text-muted);font-size:12px;display:block}.stat-card strong{font-size:16px;color:var(--accent);margin-top:4px;display:block}
+.btn-primary{width:100%;padding:16px;border-radius:16px;border:none;background:var(--accent);color:#05180f;font-size:16px;font-weight:800;cursor:pointer;transition:.2s;box-shadow:0 4px 20px rgba(0,230,118,.25)}.btn-primary:disabled{background:#263848;color:#607385;box-shadow:none;cursor:not-allowed}.btn-secondary{background:#1a2a3a;color:#fff;border:1px solid var(--card-border);padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer}
+.miner-box{position:relative;width:100%;height:210px;background:radial-gradient(circle,rgba(0,230,118,.12) 0%,rgba(11,18,25,0) 70%);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:10px 0}.coin-icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#00e676,#008844);display:grid;place-items:center;font-size:50px;box-shadow:0 0 35px rgba(0,230,118,.4);animation:pulse 2.5s infinite}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.wheel-container{position:relative;width:220px;height:220px;margin:20px auto}.wheel{width:100%;height:100%;border-radius:50%;border:6px solid var(--accent);background:conic-gradient(#1e2f3f 0deg 72deg,#131f2b 72deg 144deg,#1e2f3f 144deg 216deg,#131f2b 216deg 288deg,#1e2f3f 288deg 360deg);display:flex;align-items:center;justify-content:center;transition:transform 3s cubic-bezier(.15,.95,.35,1);font-weight:bold}.wheel-pointer{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:20px solid #ff3d00;z-index:10}
+.task-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#0e1722;border:1px solid var(--card-border);border-radius:14px;margin-bottom:10px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:65px;background:var(--nav-bg);border-top:1px solid var(--card-border);display:flex;justify-content:space-around;align-items:center;z-index:1000}.nav-item{display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:10px;cursor:pointer;text-decoration:none;width:20%}.nav-item.active{color:var(--accent)}.nav-item svg{width:22px;height:22px;margin-bottom:4px;fill:currentColor}
+.notice{font-size:12px;line-height:1.5;color:var(--text-muted);margin-top:10px}.status-online{color:var(--accent)}.status-offline{color:#ffb74d}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="user-info">
+    <div class="avatar" id="user-avatar">V</div>
+    <div class="user-meta"><h4 id="user-name">User</h4><small id="user-level">Level 1 Miner</small></div>
+  </div>
+  <button class="btn-secondary" id="connection-status" style="font-size:11px;padding:6px 10px;">Checking…</button>
+</div>
+
+<div id="tab-mine" class="tab-content active">
+  <div class="balance-display"><small class="balance-label">Total Balance</small><div class="balance-val"><span id="balance">0.000000</span> VIRUS</div><small id="status-badge" style="color:var(--accent);">● Mining Status</small></div>
+  <div class="miner-box"><div class="coin-icon">🦠</div><p style="margin-top:12px;font-weight:bold;color:var(--text-muted);">VIRUS RIG v1.0</p></div>
+  <div class="stats-grid"><div class="stat-card"><span>Mining Speed</span><strong id="mining-rate-text">10 VIRUS/hr</strong></div><div class="stat-card"><span>Session Timer</span><strong id="timer">06:00:00</strong></div></div>
+  <button class="btn-primary" id="claim-btn" onclick="claimMining()">CLAIM VIRUS</button>
+  <p class="notice" id="mine-notice">Rewards will be verified by the server when the mining API is configured.</p>
+</div>
+
+<div id="tab-spin" class="tab-content">
+  <div class="card"><h3>🎡 Daily Lucky Spin</h3><p style="font-size:12px;color:var(--text-muted);margin-top:4px;">Available Spins: <b id="spins-left" style="color:var(--accent);">5</b></p><div class="wheel-container"><div class="wheel-pointer"></div><div class="wheel" id="wheel">SPIN ME</div></div><button class="btn-primary" id="spin-btn" onclick="spinWheel()">SPIN NOW</button><p class="notice">Spin rewards are disabled until a server-side reward endpoint is configured.</p></div>
+  <div class="card"><h3>📺 Watch Ads & Get Extra Spins</h3><p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Watch ads to gain extra spins. (Limit: 10/day)</p><div class="stats-grid"><div class="stat-card"><span>Ads Watched</span><strong id="ads-count">0 / 10</strong></div><div class="stat-card"><span>Bonus Earned</span><strong id="ads-bonus">+0 Spins</strong></div></div><button class="btn-primary" style="background:#00b0ff;" onclick="watchAd()">WATCH AD (+1 SPIN)</button></div>
+</div>
+
+<div id="tab-tasks" class="tab-content">
+  <div class="card"><h3>📋 Daily Tasks</h3><p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Tasks reset daily at 00:00 UTC</p><div style="margin-top:12px;">
+    <div class="task-item"><div><strong>Join Telegram Channel</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div><button class="btn-secondary" id="task1-btn" onclick="startTask(1,'https://t.me/virusmining',10)">Join</button></div>
+    <div class="task-item"><div><strong>Join Community Group</strong><br><small style="color:var(--text-muted)">+10 VIRUS</small></div><button class="btn-secondary" id="task2-btn" onclick="startTask(2,'https://t.me/virusminingbot',10)">Join</button></div>
+    <p class="notice">Task rewards are not granted by merely opening a link. A server-side membership check and reward endpoint are required.</p>
+  </div></div>
+</div>
+
+<div id="tab-friends" class="tab-content">
+  <div class="warning-card"><b>⚠️ Anti-Cheat & Fair Play Policy:</b><br>Fake, bot, or duplicate self-referrals are strictly prohibited.</div>
+  <div class="card"><h3>🤝 Invite Friends</h3><p style="font-size:12px;color:var(--text-muted);margin:6px 0 12px;">Share your link and earn automatically!</p><div style="display:flex;gap:8px;margin-bottom:12px;"><input type="text" id="ref-link" style="min-width:0;flex:1;background:#0e1722;border:1px solid var(--card-border);color:#fff;padding:12px;border-radius:12px;font-size:12px;" readonly value="Open inside Telegram to generate link"><button class="btn-secondary" onclick="copyRefLink()">Copy</button></div><p class="notice" id="ref-notice">Referral counts and rewards require the secure referral API.</p></div>
+  <div class="card"><h3>📈 Referral Mining Tiers</h3><div class="stats-grid"><div class="stat-card"><span>Total Referrals</span><strong id="ref-active-count">0 Friends</strong></div><div class="stat-card"><span>Current Speed</span><strong id="ref-speed-boost">10 VIRUS/hr</strong></div></div></div>
+</div>
+
+<div id="tab-profile" class="tab-content">
+  <div class="card" style="text-align:center;"><div class="avatar" style="width:60px;height:60px;font-size:26px;margin:0 auto 10px;" id="prof-avatar">V</div><h3 id="prof-name">User</h3><small style="color:var(--text-muted);">Telegram account</small></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;padding:8px 0;"><span>Account Status</span><strong id="account-status" style="color:var(--accent);">Not verified</strong></div><div style="display:flex;justify-content:space-between;padding:8px 0;"><span>Ads Watched Today</span><strong id="prof-ads">0 / 10</strong></div><p class="notice">Do not treat browser-only balances as withdrawable tokens. Server verification is required.</p></div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('mine',this)"><svg viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>Mine</div>
+  <div class="nav-item" onclick="switchTab('spin',this)"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>Spin & Ads</div>
+  <div class="nav-item" onclick="switchTab('tasks',this)"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Tasks</div>
+  <div class="nav-item" onclick="switchTab('friends',this)"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Friends</div>
+  <div class="nav-item" onclick="switchTab('profile',this)"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Profile</div>
+</div>
+
+<script>
+"use strict";
+const DURATION = 6 * 60 * 60 * 1000;
+const BOT_USERNAME = "epidemyvirusbot";
+const ADSGRAM_BLOCK_ID = "54024";
+const API = { profile: "/api/profile", mining: "/api/mining", referral: "/api/referral", spin: "/api/spin", task: "/api/task", adReward: "/api/ad-reward" };
+
+let telegramInitData = "";
+let currentUserId = "guest";
+let telegramUser = null;
+let profile = { balance: 0, refCount: 0, miningRate: 10, miningStartedAt: null, spinsLeft: 5, adsWatched: 0 };
+let serverReady = false;
+let spinInProgress = false;
+
+function switchTab(tabId, el) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("tab-" + tabId)?.classList.add("active");
+  if (el) el.classList.add("active");
+}
+function setNotice(id, message) { const el = document.getElementById(id); if (el) el.textContent = message; }
+function setConnection(ready, message) {
+  const button = document.getElementById("connection-status");
+  button.textContent = message;
+  button.style.color = ready ? "var(--accent)" : "#ffb74d";
+}
+function formatNumber(n) { return (Number.isFinite(Number(n)) ? Number(n) : 0).toFixed(6); }
+function getMiningRate(refs) {
+  if (refs >= 50000) return 100;
+  if (refs >= 10000) return 85;
+  if (refs >= 5000) return 75;
+  if (refs >= 2500) return 65;
+  if (refs >= 1000) return 50;
+  if (refs >= 500) return 40;
+  if (refs >= 250) return 35;
+  if (refs >= 100) return 30;
+  if (refs >= 50) return 25;
+  if (refs >= 25) return 20;
+  if (refs >= 10) return 15;
+  return 10;
+}
+function render() {
+  const balance = Number(profile.balance) || 0;
+  const rate = Number(profile.miningRate) || getMiningRate(Number(profile.refCount) || 0);
+  document.getElementById("balance").textContent = formatNumber(balance);
+  document.getElementById("mining-rate-text").textContent = rate + " VIRUS/hr";
+  document.getElementById("ref-active-count").textContent = (Number(profile.refCount) || 0) + " Friends";
+  document.getElementById("ref-speed-boost").textContent = rate + " VIRUS/hr";
+  document.getElementById("spins-left").textContent = String(Number(profile.spinsLeft) || 0);
+  document.getElementById("ads-count").textContent = (Number(profile.adsWatched) || 0) + " / 10";
+  document.getElementById("ads-bonus").textContent = "+" + (Number(profile.adsWatched) || 0) + " Spins";
+  document.getElementById("prof-ads").textContent = (Number(profile.adsWatched) || 0) + " / 10";
+  const start = profile.miningStartedAt ? new Date(profile.miningStartedAt).getTime() : 0;
+  const elapsed = start ? Math.max(0, Math.min(Date.now() - start, DURATION)) : 0;
+  const remaining = Math.max(0, DURATION - elapsed);
+  const s = Math.floor(remaining / 1000);
+  document.getElementById("timer").textContent = [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map(v => String(v).padStart(2,"0")).join(":");
+  document.getElementById("status-badge").textContent = serverReady ? (remaining > 0 ? "● Mining Session Active" : "● Ready to mine") : "● Server not connected";
+  document.getElementById("account-status").textContent = telegramUser ? (serverReady ? "Verified by server" : "Telegram opened") : "Open in Telegram";
+}
+async function apiPost(path, body = {}) {
+  if (!telegramInitData) throw new Error("Open VIRUS Mining from Telegram to verify your account.");
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initData: telegramInitData, ...body })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok === false) throw new Error(data.error || "Server request failed.");
+  return data;
+}
+function applyProfile(data) {
+  const p = data.profile || data.user || data;
+  if (p.balance !== undefined) profile.balance = Number(p.balance) || 0;
+  if (p.refCount !== undefined) profile.refCount = Number(p.refCount) || 0;
+  if (p.referral_count !== undefined) profile.refCount = Number(p.referral_count) || 0;
+  if (p.miningRate !== undefined) profile.miningRate = Number(p.miningRate) || 10;
+  if (p.mining_rate !== undefined) profile.miningRate = Number(p.mining_rate) || 10;
+  if (p.miningStartedAt !== undefined) profile.miningStartedAt = p.miningStartedAt;
+  if (p.mining_started_at !== undefined) profile.miningStartedAt = p.mining_started_at;
+  if (p.spinsLeft !== undefined) profile.spinsLeft = Number(p.spinsLeft) || 0;
+  if (p.spins_left !== undefined) profile.spinsLeft = Number(p.spins_left) || 0;
+  if (p.adsWatched !== undefined) profile.adsWatched = Number(p.adsWatched) || 0;
+  if (p.ads_watched !== undefined) profile.adsWatched = Number(p.ads_watched) || 0;
+}
+async function loadProfile() {
+  if (!telegramInitData) {
+    setConnection(false, "Open in Telegram");
+    setNotice("mine-notice", "Open this Mini App from Telegram. Server API is required for real balances and rewards.");
+    return;
+  }
+  try {
+    const data = await apiPost(API.profile);
+    applyProfile(data);
+    serverReady = true;
+    setConnection(true, "Connected");
+    setNotice("mine-notice", "Account data loaded from server.");
+    setNotice("ref-notice", "Referral data is loaded from the server.");
+  } catch (error) {
+    serverReady = false;
+    setConnection(false, "API not ready");
+    setNotice("mine-notice", error.message + " Ensure /api/profile exists and verifies Telegram initData.");
+    setNotice("ref-notice", "Referral API is not connected yet. Referral rewards are disabled for safety.");
+  }
+  render();
+}
+async function claimMining() {
+  if (!serverReady) return alert("Mining reward is unavailable until the secure server API is configured.");
+  const button = document.getElementById("claim-btn");
+  button.disabled = true;
+  try {
+    const data = await apiPost(API.mining, { action: "claim" });
+    applyProfile(data);
+    render();
+    alert(data.message || "Mining reward updated.");
+  } catch (error) { alert(error.message); }
+  finally { button.disabled = false; }
+}
+async function spinWheel() {
+  if (spinInProgress) return;
+  if (!serverReady) return alert("Spin rewards are unavailable until the secure server API is configured.");
+  if ((Number(profile.spinsLeft) || 0) <= 0) return alert("No spins left!");
+  spinInProgress = true;
+  const button = document.getElementById("spin-btn");
+  button.disabled = true;
+  try {
+    const data = await apiPost(API.spin, { action: "spin" });
+    const deg = Math.floor(Math.random() * 360) + 1440;
+    document.getElementById("wheel").style.transform = `rotate(${deg}deg)`;
+    setTimeout(() => {
+      applyProfile(data);
+      render();
+      alert(data.message || ("Spin completed. Reward: " + (data.reward ?? "updated") + " VIRUS."));
+      spinInProgress = false;
+      button.disabled = false;
+    }, 3000);
+  } catch (error) {
+    spinInProgress = false;
+    button.disabled = false;
+    alert(error.message);
+  }
+}
+async function watchAd() {
+  if (!serverReady) return alert("Ad rewards are unavailable until the secure server API is configured.");
+  if ((Number(profile.adsWatched) || 0) >= 10) return alert("Daily limit reached (10/10)!");
+  if (!window.Adsgram) return alert("Adsgram SDK is loading or unavailable. Please refresh.");
+  try {
+    const controller = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    await controller.show();
+    const data = await apiPost(API.adReward, { action: "completed" });
+    applyProfile(data);
+    render();
+    alert(data.message || "Ad completion submitted to server.");
+  } catch (error) {
+    console.error("Adsgram or reward request failed:", error);
+    alert("Ad was not completed or the reward server rejected it. No reward was added.");
+  }
+}
+async function startTask(id, url) {
+  if (!serverReady) return alert("Task rewards are unavailable until the secure server API is configured.");
+  if (id === 1 || id === 2) {
+    const opened = window.Telegram?.WebApp?.openTelegramLink;
+    if (opened) window.Telegram.WebApp.openTelegramLink(url);
+    else window.open(url, "_blank", "noopener,noreferrer");
+  }
+  alert("After completing the task, use the server-verified task API. Rewards are not granted just for opening a link.");
+}
+async function copyRefLink() {
+  const input = document.getElementById("ref-link");
+  if (!telegramUser) return alert("Open this Mini App inside Telegram to create your referral link.");
+  const link = `https://t.me/${BOT_USERNAME}?startapp=ref_${currentUserId}`;
+  input.value = link;
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(link);
+    else { input.select(); document.execCommand("copy"); }
+    alert("Referral link copied!");
+  } catch (_) {
+    input.select();
+    alert("Select and copy your referral link.");
+  }
+}
+function initTelegram() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) {
+    setConnection(false, "Open in Telegram");
+    setNotice("mine-notice", "This app must be opened from Telegram for account verification.");
+    return;
+  }
+  tg.ready();
+  tg.expand(
